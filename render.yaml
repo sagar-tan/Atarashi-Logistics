@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: atarashi-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
