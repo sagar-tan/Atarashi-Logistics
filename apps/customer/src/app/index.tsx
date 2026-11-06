@@ -2,8 +2,10 @@ import type { Coordinates, VehicleType } from '@atarashi/domain';
 import { Image } from 'expo-image';
 import {
   AlertCircle,
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   ArrowUpDown,
   Bell,
   Bike,
@@ -175,8 +177,10 @@ export default function CustomerHomeScreen() {
 
   // Navigation / Phase State
   const [customerState, setCustomerState] = useState<CustomerState>('explore_quote');
+  const [dispatchStep, setDispatchStep] = useState<'route' | 'vehicles'>('route');
   const [navTab, setNavTab] = useState<CustomerNavigationTab>('dispatch');
   const [serviceMode, setServiceMode] = useState<'parcel' | 'freight' | 'shifting'>('parcel');
+  const [showFarePolicyModal, setShowFarePolicyModal] = useState(false);
 
   // Booking Configuration State
   const [pickupAddress, setPickupAddress] = useState('Indiranagar 100ft Road, Bengaluru');
@@ -484,301 +488,375 @@ export default function CustomerHomeScreen() {
   );
 
   // ==========================================
-  // Render: Overview Tab: Send Parcel
+  // Render: Overview Tab: Send Parcel (Progressive Disclosure)
   // ==========================================
   const renderSendParcelTab = () => (
-    <View>
-      {/* Porter-Grade Multi-Stop Route Card */}
-      <MultiStopRouteCard
-        pickup={{
-          ...pickupStop,
-          address: pickupAddress,
-          coordinates: pickupCoords,
-        }}
-        drops={dropStops.map((d, i) =>
-          i === 0
-            ? { ...d, address: dropoffAddress, coordinates: dropoffCoords }
-            : d
-        )}
-        distanceKm={distanceKm}
-        travelMins={travelMins}
-        onReverseRoute={handleSwapAddresses}
-        onAddStop={handleAddDropStop}
-        onRemoveStop={handleRemoveDropStop}
-        onEditLocation={(target) => {
-          if (target === 'pickup') {
-            setPickerTarget('pickup');
-          } else {
-            setPickerTarget('dropoff');
-          }
-          setShowLocationPicker(true);
-        }}
-        onUpdatePickupContact={(c) => setPickupStop((prev) => ({ ...prev, contact: c }))}
-        onUpdateDropContact={(idx, c) =>
-          setDropStops((prev) =>
-            prev.map((stop, i) => (i === idx ? { ...stop, contact: c } : stop))
-          )
-        }
-      />
+    <View style={styles.dispatchTabContainer}>
+      {/* ========================================================= */}
+      {/* STAGE 1: HERO MAP & ROUTE SETUP                          */}
+      {/* ========================================================= */}
+      {dispatchStep === 'route' && (
+        <View style={styles.stageOneContainer}>
+          {/* Hero Tactile Vector Map with Route Polyline & Courier Radar */}
+          <View style={styles.heroMapContainer}>
+            <TactileMap
+              pickupCoords={pickupCoords}
+              dropoffCoords={dropoffCoords}
+              pickupLabel={pickupAddress.split(',')[0]}
+              dropoffLabel={dropoffAddress.split(',')[0]}
+              distanceKm={distanceKm}
+              durationMins={travelMins}
+              isEnRoute={false}
+              height={260}
+            />
+          </View>
 
-      {/* Service Mode Selector - Clean Luxury Monochrome Tabs */}
-      <View style={styles.serviceModeContainer}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => {
-            setServiceMode('parcel');
-            setSelectedVehicle('bike');
-          }}
-          style={[
-            styles.serviceModeTab,
-            serviceMode === 'parcel' && styles.serviceModeTabActive,
-          ]}
-          accessibilityRole="tab"
-          accessibilityLabel="Express Parcel service"
-        >
-          <Bike
-            size={16}
-            color={serviceMode === 'parcel' ? colors.onDark : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.serviceModeLabel,
-              serviceMode === 'parcel' && styles.serviceModeLabelActive,
-            ]}
-          >
-            Express Parcel
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => {
-            setServiceMode('freight');
-            setSelectedVehicle('car');
-          }}
-          style={[
-            styles.serviceModeTab,
-            serviceMode === 'freight' && styles.serviceModeTabActive,
-          ]}
-          accessibilityRole="tab"
-          accessibilityLabel="Freight and Trucks service"
-        >
-          <Truck
-            size={16}
-            color={serviceMode === 'freight' ? colors.onDark : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.serviceModeLabel,
-              serviceMode === 'freight' && styles.serviceModeLabelActive,
-            ]}
-          >
-            Freight Trucks
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => {
-            setShowPackersMovers(true);
-          }}
-          style={styles.serviceModeTab}
-          accessibilityRole="button"
-          accessibilityLabel="Packers and Movers House Shifting"
-        >
-          <Building2 size={16} color={colors.textPrimary} />
-          <Text style={styles.serviceModeLabel}>
-            House Shifting
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Vehicle Selector */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>
-          {serviceMode === 'freight' ? 'Commercial Freight Fleet' : 'City Express Fleet'}
-        </Text>
-        <Text style={styles.sectionSubtitle}>Select Vehicle</Text>
-      </View>
-
-      <View style={styles.vehiclesGrid}>
-        {(serviceMode === 'freight'
-          ? VEHICLE_CATALOG.filter((v) => v.type === 'car' || v.type === 'pickup')
-          : VEHICLE_CATALOG.filter((v) => v.type === 'bike' || v.type === 'auto')
-        ).map((v) => {
-          const isSelected = v.type === selectedVehicle;
-          return (
+          {/* Clean Elevated Route Configuration Card */}
+          <NeomorphCard style={styles.cleanRouteCard}>
+            {/* Pickup Stop Row */}
             <TouchableOpacity
-              key={v.type}
-              activeOpacity={0.88}
-              onPress={() => setSelectedVehicle(v.type)}
-              style={[
-                styles.vehicleCard,
-                isSelected && styles.vehicleCardSelected,
-              ]}
+              activeOpacity={0.8}
+              onPress={() => {
+                setPickerTarget('pickup');
+                setShowLocationPicker(true);
+              }}
+              style={styles.cleanStopRow}
             >
-              <View style={styles.vehicleCardHeader}>
-                <View
-                  style={[
-                    styles.vehicleIconTile,
-                    isSelected && styles.vehicleIconTileSelected,
-                  ]}
-                >
-                  {v.icon(isSelected ? colors.onDark : colors.textPrimary)}
-                </View>
-                <View style={styles.vehicleFareTag}>
-                  <Text style={styles.vehicleFareText}>{formatPaise(v.baseFarePaise)}</Text>
-                </View>
+              <View style={styles.cleanStopIconBox}>
+                <ArrowUp size={16} color={colors.primaryDark} />
               </View>
-
-              <Text style={styles.vehicleName}>{v.title}</Text>
-              <Text style={styles.vehicleSub} numberOfLines={1}>
-                {v.subtitle}
-              </Text>
-
-              <View style={styles.vehicleMetaRow}>
-                <View style={styles.weightBadge}>
-                  <Text style={styles.weightBadgeText}>Max {v.maxWeightKg} kg</Text>
-                </View>
-                <Text style={styles.vehicleEtaText}>~{v.etaMins}m away</Text>
+              <View style={styles.cleanStopCopy}>
+                <Text style={styles.cleanStopLabel}>PICKUP POINT</Text>
+                <Text style={styles.cleanStopAddress} numberOfLines={1}>
+                  {pickupAddress}
+                </Text>
               </View>
-
-              {isSelected && (
-                <View style={styles.selectedCheckPill}>
-                  <Check size={11} color={colors.onDark} strokeWidth={3} />
-                  <Text style={styles.selectedCheckText}>SELECTED</Text>
-                </View>
-              )}
+              <View style={styles.cleanPinpointBtn}>
+                <Crosshair size={13} color={colors.textSecondary} />
+                <Text style={styles.cleanPinpointText}>Pinpoint</Text>
+              </View>
             </TouchableOpacity>
-          );
-        })}
-      </View>
 
-      {/* Cargo Category Chips */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Parcel Category</Text>
-        <Text style={styles.sectionSubtitle}>Handles with Care</Text>
-      </View>
+            {/* Route Divider with distance & swap button */}
+            <View style={styles.cleanRouteDivider}>
+              <View style={styles.cleanRouteLine} />
+              <TouchableOpacity
+                onPress={handleSwapAddresses}
+                style={styles.cleanSwapBtn}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Swap pickup and destination"
+              >
+                <ArrowUpDown size={13} color={colors.primaryDark} />
+              </TouchableOpacity>
+              <View style={styles.cleanRouteStatsBadge}>
+                <Text style={styles.cleanRouteStatsText}>
+                  {distanceKm} km • ~{travelMins} mins
+                </Text>
+              </View>
+              <View style={styles.cleanRouteLine} />
+            </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryRow}
-      >
-        {CARGO_CATEGORIES.map((cat) => {
-          const isCatSelected = cat === selectedCategory;
-          return (
+            {/* Drop Destination Stop Row */}
             <TouchableOpacity
-              key={cat}
-              activeOpacity={0.85}
-              onPress={() => setSelectedCategory(cat)}
-              style={[
-                styles.categoryChip,
-                isCatSelected && styles.categoryChipSelected,
-              ]}
+              activeOpacity={0.8}
+              onPress={() => {
+                setPickerTarget('dropoff');
+                setShowLocationPicker(true);
+              }}
+              style={styles.cleanStopRow}
             >
-              <Package
-                size={14}
-                color={isCatSelected ? colors.onDark : colors.textSecondary}
+              <View style={[styles.cleanStopIconBox, styles.cleanStopIconDropoff]}>
+                <ArrowDown size={16} color="#DC2626" />
+              </View>
+              <View style={styles.cleanStopCopy}>
+                <Text style={styles.cleanStopLabel}>DELIVERY DESTINATION</Text>
+                <Text style={styles.cleanStopAddress} numberOfLines={1}>
+                  {dropoffAddress}
+                </Text>
+              </View>
+              <View style={styles.cleanPinpointBtn}>
+                <Crosshair size={13} color={colors.textSecondary} />
+                <Text style={styles.cleanPinpointText}>Pinpoint</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Quick-Access Saved Address Chips */}
+            <View style={styles.savedPlacesStrip}>
+              <TouchableOpacity
+                style={styles.savedPlacePill}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setDropoffAddress('Flat 402, Green Glen Heights, Koramangala 4th Block');
+                  setDropoffCoords({ latitude: 12.9352, longitude: 77.6245 });
+                }}
+              >
+                <Home size={12} color={colors.primaryDark} />
+                <Text style={styles.savedPlacePillText}>Home</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.savedPlacePill}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setDropoffAddress('WeWork Galaxy, 43 Residency Rd, Shanthala Nagar');
+                  setDropoffCoords({ latitude: 12.9716, longitude: 77.5946 });
+                }}
+              >
+                <Building2 size={12} color={colors.primaryDark} />
+                <Text style={styles.savedPlacePillText}>Office</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.savedPlacePill}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setDropoffAddress('Atarashi Logistics Peenya Hub, Industrial Area');
+                  setDropoffCoords({ latitude: 13.0285, longitude: 77.5197 });
+                }}
+              >
+                <Package size={12} color={colors.primaryDark} />
+                <Text style={styles.savedPlacePillText}>Warehouse</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Stage 1 CTA: Select Vehicle & Rates */}
+            <PillButton
+              title="Select Vehicle & View Rates"
+              variant="dark"
+              size="lg"
+              style={styles.selectVehicleBtn}
+              icon={<ArrowRight size={18} color={colors.onDark} />}
+              onPress={() => setDispatchStep('vehicles')}
+            />
+          </NeomorphCard>
+        </View>
+      )}
+
+      {/* ========================================================= */}
+      {/* STAGE 2: VEHICLE FLEET & PRICING DRAWER                   */}
+      {/* ========================================================= */}
+      {dispatchStep === 'vehicles' && (
+        <View style={styles.stageTwoContainer}>
+          {/* Header Back Navigation */}
+          <View style={styles.subpageHeader}>
+            <TouchableOpacity
+              style={styles.backIconButton}
+              onPress={() => setDispatchStep('route')}
+              accessibilityRole="button"
+              accessibilityLabel="Back to route setup"
+            >
+              <ArrowLeft size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <View style={styles.subpageHeaderCopy}>
+              <Text style={styles.subpageTitle}>Select Vehicle</Text>
+              <Text style={styles.subpageSubtitle} numberOfLines={1}>
+                {pickupAddress.split(',')[0]} → {dropoffAddress.split(',')[0]} • {distanceKm} km
+              </Text>
+            </View>
+          </View>
+
+          {/* Service Mode Selector */}
+          <View style={styles.serviceModeContainer}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                setServiceMode('parcel');
+                setSelectedVehicle('bike');
+              }}
+              style={[
+                styles.serviceModeTab,
+                serviceMode === 'parcel' && styles.serviceModeTabActive,
+              ]}
+              accessibilityRole="tab"
+              accessibilityLabel="Express Parcel service"
+            >
+              <Bike
+                size={16}
+                color={serviceMode === 'parcel' ? colors.onDark : colors.textSecondary}
               />
               <Text
                 style={[
-                  styles.categoryChipText,
-                  isCatSelected && styles.categoryChipTextSelected,
+                  styles.serviceModeLabel,
+                  serviceMode === 'parcel' && styles.serviceModeLabelActive,
                 ]}
               >
-                {cat}
+                Express Parcel
               </Text>
             </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
 
-      {/* Porter Add-ons */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Porter Add-Ons & Protection</Text>
-      </View>
-
-      <NeomorphCard style={styles.addonsCard}>
-        {/* Loading Helper Add-on */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.addonRow}
-          onPress={() => setHelperAddon(!helperAddon)}
-        >
-          <View style={styles.addonIconBox}>
-            <User size={18} color={colors.primaryDark} />
-          </View>
-          <View style={styles.addonCopy}>
-            <View style={styles.addonTitleRow}>
-              <Text style={styles.addonTitle}>Driver Loading Helper</Text>
-              <Text style={styles.addonPrice}>
-                +{selectedVehicle === 'pickup' ? '₹ 150.00' : '₹ 50.00'}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                setServiceMode('freight');
+                setSelectedVehicle('car');
+              }}
+              style={[
+                styles.serviceModeTab,
+                serviceMode === 'freight' && styles.serviceModeTabActive,
+              ]}
+              accessibilityRole="tab"
+              accessibilityLabel="Freight Trucks service"
+            >
+              <Truck
+                size={16}
+                color={serviceMode === 'freight' ? colors.onDark : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.serviceModeLabel,
+                  serviceMode === 'freight' && styles.serviceModeLabelActive,
+                ]}
+              >
+                Freight Trucks
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setShowPackersMovers(true)}
+              style={styles.serviceModeTab}
+              accessibilityRole="button"
+              accessibilityLabel="Packers and Movers House Shifting"
+            >
+              <Building2 size={16} color={colors.textPrimary} />
+              <Text style={styles.serviceModeLabel}>House Shifting</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Vehicle Grid - Focused 2 Cards with Pure Clean Metadata */}
+          <View style={styles.vehiclesGrid}>
+            {(serviceMode === 'freight'
+              ? VEHICLE_CATALOG.filter((v) => v.type === 'car' || v.type === 'pickup')
+              : VEHICLE_CATALOG.filter((v) => v.type === 'bike' || v.type === 'auto')
+            ).map((v) => {
+              const isSelected = v.type === selectedVehicle;
+              return (
+                <TouchableOpacity
+                  key={v.type}
+                  activeOpacity={0.88}
+                  onPress={() => setSelectedVehicle(v.type)}
+                  style={[
+                    styles.vehicleCard,
+                    isSelected && styles.vehicleCardSelected,
+                  ]}
+                >
+                  <View style={styles.vehicleCardHeader}>
+                    <View
+                      style={[
+                        styles.vehicleIconTile,
+                        isSelected && styles.vehicleIconTileSelected,
+                      ]}
+                    >
+                      {v.icon(isSelected ? colors.onDark : colors.textPrimary)}
+                    </View>
+                    <View style={styles.vehicleFareTag}>
+                      <Text style={styles.vehicleFareText}>{formatPaise(v.baseFarePaise)}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.vehicleName}>{v.title}</Text>
+
+                  <View style={styles.vehicleMetaRow}>
+                    <View style={styles.weightBadge}>
+                      <Text style={styles.weightBadgeText}>Max {v.maxWeightKg} kg</Text>
+                    </View>
+                    <Text style={styles.vehicleEtaText}>~{v.etaMins}m away</Text>
+                  </View>
+
+                  {isSelected && (
+                    <View style={styles.selectedCheckPill}>
+                      <Check size={11} color={colors.onDark} strokeWidth={3} />
+                      <Text style={styles.selectedCheckText}>SELECTED</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Minimalist 1-Line Add-on & Coverage Strip */}
+          <View style={styles.addonsSection}>
+            <Text style={styles.sectionTitleSmall}>Add-ons & Transit Protection</Text>
+            <View style={styles.addonChipsRow}>
+              {/* Helper Toggle Chip */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setHelperAddon(!helperAddon)}
+                style={[
+                  styles.addonChip,
+                  helperAddon && styles.addonChipActive,
+                ]}
+              >
+                <User size={13} color={helperAddon ? colors.onDark : colors.primaryDark} />
+                <Text
+                  style={[
+                    styles.addonChipText,
+                    helperAddon && styles.addonChipTextActive,
+                  ]}
+                >
+                  {helperAddon ? 'Helper: Active (₹50)' : '+ Loading Helper (₹50)'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Insurance Toggle Chip */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setInsuranceAddon(!insuranceAddon)}
+                style={[
+                  styles.addonChip,
+                  insuranceAddon && styles.addonChipActive,
+                ]}
+              >
+                <ShieldCheck size={13} color={insuranceAddon ? colors.onDark : colors.primaryDark} />
+                <Text
+                  style={[
+                    styles.addonChipText,
+                    insuranceAddon && styles.addonChipTextActive,
+                  ]}
+                >
+                  {insuranceAddon ? 'Insured: ₹10k Cover (₹15)' : '+ Transit Insurance'}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.addonDesc}>
-              Driver assists in carrying parcels from your doorstep to vehicle.
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.switchTrack,
-              helperAddon && styles.switchTrackActive,
-            ]}
-          >
-            <View
-              style={[
-                styles.switchThumb,
-                helperAddon && styles.switchThumbActive,
-              ]}
-            />
-          </View>
-        </TouchableOpacity>
 
-        <View style={styles.addonDivider} />
-
-        {/* Transit Insurance Add-on */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.addonRow}
-          onPress={() => setInsuranceAddon(!insuranceAddon)}
-        >
-          <View style={styles.addonIconBox}>
-            <ShieldCheck size={18} color={colors.primaryDark} />
+            {/* Policy & Carriage Terms Trigger */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowFarePolicyModal(true)}
+              style={styles.policyLinkRow}
+            >
+              <Info size={13} color={colors.textSecondary} />
+              <Text style={styles.policyLinkText}>
+                15 min free buffer included • Carriage Policy & Terms
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.addonCopy}>
-            <View style={styles.addonTitleRow}>
-              <Text style={styles.addonTitle}>Package Transit Insurance</Text>
-              <Text style={styles.addonPrice}>+₹ 15.00</Text>
+
+          {/* Dedicated Stage 2 Bottom Action Card (Single Surface Dock) */}
+          <NeomorphCard style={styles.vehicleActionCard}>
+            <View style={styles.quoteSummaryRow}>
+              <View style={styles.quoteFareCol}>
+                <Text style={styles.quoteFareLabel}>ESTIMATED FARE</Text>
+                <Text style={styles.quoteFareValue}>{formatPaise(finalTotalPaise)}</Text>
+                <Text style={styles.quoteFareBreakdown} numberOfLines={1}>
+                  {currentVehicleConfig.title} • {distanceKm} km
+                  {helperAddon ? ' • Helper' : ''}
+                  {insuranceAddon ? ' • Insured' : ''}
+                </Text>
+              </View>
+              <PillButton
+                title="Review & Book"
+                variant="dark"
+                size="md"
+                style={styles.quoteProceedBtn}
+                icon={<ArrowRight size={17} color={colors.onDark} />}
+                onPress={() => setCustomerState('booking_sheet')}
+              />
             </View>
-            <Text style={styles.addonDesc}>
-              Full transit protection coverage up to ₹ 10,000 for lost or damaged goods.
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.switchTrack,
-              insuranceAddon && styles.switchTrackActive,
-            ]}
-          >
-            <View
-              style={[
-                styles.switchThumb,
-                insuranceAddon && styles.switchThumbActive,
-              ]}
-            />
-          </View>
-        </TouchableOpacity>
-      </NeomorphCard>
-
-      {/* Loading & Buffer Operational Policy Card */}
-      <View style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>
-        <LoadingBufferPill
-          variant="card"
-          freeMinutes={25}
-          overageRatePaise={200}
-        />
-      </View>
+          </NeomorphCard>
+        </View>
+      )}
     </View>
   );
 
@@ -1966,6 +2044,69 @@ export default function CustomerHomeScreen() {
   );
 
   // ==========================================
+  // Render: Fare Policy & Loading Buffer Modal
+  // ==========================================
+  const renderFarePolicyModal = () => (
+    <Modal
+      visible={showFarePolicyModal}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowFarePolicyModal(false)}
+    >
+      <Pressable
+        style={styles.modalBackdrop}
+        onPress={() => setShowFarePolicyModal(false)}
+      >
+        <Pressable style={styles.policyModalSheet} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.policyModalHeader}>
+            <View style={styles.policyModalTitleRow}>
+              <ShieldCheck size={20} color={colors.primaryDark} />
+              <Text style={styles.policyModalTitle}>Carriage & Buffer Policy</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowFarePolicyModal(false)}
+              style={styles.policyModalCloseBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close policy modal"
+            >
+              <X size={18} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <LoadingBufferPill
+              variant="card"
+              freeMinutes={15}
+              overageRatePaise={250}
+            />
+
+            <View style={styles.policyInfoBox}>
+              <Text style={styles.policyInfoHeading}>Safety & Legal Invariants</Text>
+              <Text style={styles.policyInfoText}>
+                • All parcel dispatches conform strictly to the Carriage by Road Act, 2007.
+              </Text>
+              <Text style={styles.policyInfoText}>
+                • Prohibited hazardous goods (flammables, explosives, toxic chemicals, narcotics) are strictly disallowed.
+              </Text>
+              <Text style={styles.policyInfoText}>
+                • Optional transit insurance covers up to ₹10,000 for package loss or in-transit physical damage.
+              </Text>
+            </View>
+
+            <PillButton
+              title="Understood"
+              variant="dark"
+              size="md"
+              style={{ marginTop: 16, marginBottom: 8 }}
+              onPress={() => setShowFarePolicyModal(false)}
+            />
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+
+  // ==========================================
   // Main Return
   // ==========================================
   return (
@@ -1977,7 +2118,9 @@ export default function CustomerHomeScreen() {
           styles.scrollContent,
           {
             paddingBottom:
-              customerState === 'explore_quote' && navTab === 'dispatch' ? 180 : 120,
+              customerState === 'explore_quote' && navTab === 'dispatch' && dispatchStep === 'route'
+                ? 110
+                : 40,
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -1997,35 +2140,9 @@ export default function CustomerHomeScreen() {
         {navTab === 'wallet' && renderWalletPassesTab()}
       </ScrollView>
 
-      {/* Floating Quote Summary Dock (Elevated above bottom nav bar) */}
-      {customerState === 'explore_quote' && navTab === 'dispatch' && (
-        <View style={[styles.quoteSummaryDock, { bottom: Math.max(insets.bottom + 68, 76) }]}>
-          <NeomorphCard style={styles.quoteSummaryCard}>
-            <View style={styles.quoteSummaryRow}>
-              <View style={styles.quoteFareCol}>
-                <Text style={styles.quoteFareLabel}>ESTIMATED FARE</Text>
-                <Text style={styles.quoteFareValue}>{formatPaise(finalTotalPaise)}</Text>
-                <Text style={styles.quoteFareBreakdown} numberOfLines={1} ellipsizeMode="tail">
-                  {currentVehicleConfig.title} • {distanceKm} km
-                  {helperAddon ? ' • Helper' : ''}
-                  {insuranceAddon ? ' • Insured' : ''}
-                </Text>
-              </View>
-              <PillButton
-                title="Proceed"
-                variant="dark"
-                size="md"
-                style={styles.quoteProceedBtn}
-                icon={<ArrowRight size={17} color={colors.onDark} />}
-                onPress={() => setCustomerState('booking_sheet')}
-              />
-            </View>
-          </NeomorphCard>
-        </View>
-      )}
-
       {/* Floating Neomorphic Bottom Navigation Bar */}
-      {customerState !== 'booking_sheet' && (
+      {((customerState === 'explore_quote' && dispatchStep === 'route' && navTab === 'dispatch') ||
+        navTab !== 'dispatch') && (
         <BottomNavigationBar
           activeTab={navTab}
           onTabChange={(tab) => {
@@ -2034,6 +2151,7 @@ export default function CustomerHomeScreen() {
           onCenterFabPress={() => {
             setNavTab('dispatch');
             setCustomerState('explore_quote');
+            setDispatchStep('route');
           }}
           activeOrderCount={customerState === 'active_tracking' ? 1 : 0}
         />
@@ -2043,6 +2161,7 @@ export default function CustomerHomeScreen() {
       {renderChatModal()}
       {renderPodModal()}
       {renderCancelModal()}
+      {renderFarePolicyModal()}
 
       {/* Interactive Location Pinpointing Modal */}
       <LocationPickerModal
@@ -2618,15 +2737,258 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
 
-  // Quote Summary Bar
-  // Floating Quote Summary Dock
-  quoteSummaryDock: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    alignItems: 'center',
-    zIndex: 998,
+  // Progressive Disclosure Layout Styles
+  dispatchTabContainer: {
+    flex: 1,
   },
+  stageOneContainer: {
+    gap: 14,
+  },
+  heroMapContainer: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...theme.shadows.card,
+  },
+  cleanRouteCard: {
+    padding: 16,
+    borderRadius: 20,
+  },
+  cleanStopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  cleanStopIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cleanStopIconDropoff: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+  },
+  cleanStopCopy: {
+    flex: 1,
+  },
+  cleanStopLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+  },
+  cleanStopAddress: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginTop: 2,
+  },
+  cleanPinpointBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cleanPinpointText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  cleanRouteDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  cleanRouteLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  cleanSwapBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cleanRouteStatsBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cleanRouteStatsText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  savedPlacesStrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  savedPlacePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  savedPlacePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  selectVehicleBtn: {
+    marginTop: 10,
+    width: '100%',
+  },
+  stageTwoContainer: {
+    gap: 14,
+  },
+  subpageHeaderCopy: {
+    flex: 1,
+  },
+  addonsSection: {
+    marginTop: 6,
+  },
+  sectionTitleSmall: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  addonChipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  addonChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  addonChipActive: {
+    backgroundColor: colors.primaryDark,
+    borderColor: colors.primaryDark,
+  },
+  addonChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  addonChipTextActive: {
+    color: colors.onDark,
+  },
+  policyLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+  policyLinkText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
+  },
+  vehicleActionCard: {
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: theme.radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    marginTop: 8,
+    ...theme.shadows.card,
+  },
+  policyModalSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    maxHeight: '85%',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  policyModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  policyModalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  policyModalTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.textPrimary,
+  },
+  policyModalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  policyInfoBox: {
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 6,
+  },
+  policyInfoHeading: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  policyInfoText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    lineHeight: 16,
+  },
+
+  // Quote Summary Bar
   quoteSummaryCard: {
     width: '100%',
     maxWidth: 440,

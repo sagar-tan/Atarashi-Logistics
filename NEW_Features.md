@@ -739,3 +739,79 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors (PASSED)**.
   - `npm test`: **30 / 30 tests passed**.
   - Verified live on Pixel 9 emulator (`emulator-5554`) via ADB screenshots across home screen, bottom navigation tabs, and booking sheet.
+
+
+## 2026-11-06 17:48 IST
+
+### Elegant Layout Redesign Plan & Progressive Disclosure Architecture
+- **Request:** "The UI is fuckin Loaded with Stuff and texts, its shit, plan a new elegant layout."
+- **Goal:** Diagnose the severe cognitive clutter, text overload, and double-dock overlapping glitch in the customer app, and formulate a world-class, map-centric 3-stage progressive disclosure redesign blueprint.
+- **Changes:**
+  - Formulated the comprehensive redesign artifact at `C:\Users\tw_strat\.gemini\antigravity\brain\9cfc69de-fdb1-4146-83ab-a1f5143d7cd8\elegant_layout_redesign_plan.md`:
+    - **Identified 5 Core Failures**:
+      1. Glitchy "Double-Dock Sandwich" (Floating quote dock stacked on top of floating bottom navbar covering >35% of the screen).
+      2. Text & micro-copy bloat (verbose helper, insurance, buffer policy paragraphs).
+      3. Lack of progressive disclosure (dumping all route, vehicle, category, add-on, and policy elements on one continuous scroll).
+      4. Suffocated map canvas.
+      5. 18 competing interactive elements in one view.
+    - **Established 3-Stage Progressive Disclosure Flow**:
+      - **Stage 1 (Discovery & Route)**: Upper 68% live map canvas + sleek floating route card (`Indiranagar 100ft Rd` → `Where to?`) + Quick Saved Places pills + bottom navbar.
+      - **Stage 2 (Vehicle & Fare Drawer)**: Bottom navbar hides; sleek bottom drawer slides up over lower 42% with horizontal vehicle strip (`Bike • 4m • ₹185`), compact one-line add-on toggle chips (`[+ Helper ₹50]`, `[🛡️ Insured]`), and single elevated action button.
+      - **Stage 3 (Checkout & Slide-to-Confirm)**: Dedicated drawer with Payment method pill, B2B GSTIN tag, fare total, and full-width `SlideToConfirm`.
+    - **Component & Text Diet**:
+      - Completely removed inline `LoadingBufferPill` and prohibited goods text from the main screen (moved behind an `[ⓘ Policy & Breakdown]` on-demand modal).
+      - Replaced bulky helper/insurance cards with sleek single-line toggle chips.
+      - Eliminated duplicate floating quote docks.
+
+
+## 2026-11-06 18:16 IST
+
+### Execution of 3-Stage Progressive Disclosure Redesign & Complete Elimination of Text Bloat & Double-Docking
+- **Request:** "proceed" (after reviewing the Elegant Layout Redesign Blueprint).
+- **Goal:** Execute the complete redesign in `apps/customer/src/app/index.tsx`, making the live map the hero, eliminating the overlapping double-dock sandwich, moving verbose buffer/legal text into an on-demand modal, and providing a seamless 3-stage progressive flow.
+- **Changes:**
+  - **Refactored `apps/customer/src/app/index.tsx`**:
+    - Introduced sub-step state: `const [dispatchStep, setDispatchStep] = useState<'route' | 'vehicles'>('route')` and `showFarePolicyModal`.
+    - **Stage 1 (Hero Map & Clean Route Setup)**:
+      - Embedded `TactileMap` (height: 260px) as the visual hero with route polyline, live courier beacon, arrival time badge, and driver telemetry card.
+      - Built `cleanRouteCard` showing:
+        - Pickup location row with direct Pinpoint modal trigger.
+        - High-contrast route divider with distance (`5.18 km`), travel time (`~13 mins`), and `handleSwapAddresses` toggle button.
+        - Drop destination row with direct Pinpoint modal trigger.
+        - Quick-access saved place chips: `[ 🏠 Home ]` `[ 🏢 Office ]` `[ 📦 Warehouse ]` (1-tap destination selection).
+        - Primary CTA: `PillButton` with title `"Select Vehicle & View Rates"` (`variant="dark"`, `size="lg"`).
+      - Resting `BottomNavigationBar` at the bottom with ZERO overlapping docks.
+    - **Stage 2 (Vehicle Fleet & Rate Drawer)**:
+      - Triggered by `"Select Vehicle & View Rates"`.
+      - `BottomNavigationBar` smoothly hides, eliminating double-docking.
+      - Subpage header with back button returning to Stage 1, title `"Select Vehicle"`, and route subtitle.
+      - Clean segmented service mode switcher: `[ 🛵 Express Parcel ]` | `[ 🚚 Freight Trucks ]` | `[ 🏠 House Shifting ]`.
+      - Clean vehicle cards displaying only essential metrics: Vehicle Icon, Title, Base Fare (`formatPaise`), ETA, and Max Weight limit. Completely eliminated paragraphs of descriptive copy.
+      - Minimalist 1-line add-on & protection chips:
+        - `[ 👤 + Loading Helper (₹50) ]` (capsule pill button; fills black with checkmark when active)
+        - `[ 🛡️ Insured: ₹10k Cover (₹15) ]` (capsule pill button; fills black with checkmark when active)
+        - `[ ℹ️ 15 min free buffer included • Carriage Policy & Terms ]` (link opening `showFarePolicyModal`)
+      - Dedicated single-surface bottom action card with total estimated fare and `"Review & Book →"` CTA.
+    - **Stage 3 (Booking Details & Checkout Drawer)**:
+      - Accessible via `"Review & Book →"`.
+      - Back button cleanly returns to Stage 2 (`Select Vehicle`).
+      - Clean recipient contact inputs (Name, Phone, Address/Floor, Note).
+      - Payment option selector (Online UPI/Cards, Wallet, COD).
+      - B2B GSTIN card for 18% Input Tax Credit.
+      - Itemized fare breakdown.
+      - Hero continuous capsule slider: `SlideToConfirm` (`Slide to Book • ₹ 200.00 ›››`).
+      - Bottom navigation bar remains hidden for unobstructed sliding ergonomics.
+    - **Created `renderFarePolicyModal()`**:
+      - Encapsulated `LoadingBufferPill` (15 mins free loading buffer, ₹2.5/min overage rate) and Carriage by Road Act 2007 / safety compliance / insurance terms inside a clean elevated modal sheet.
+      - Completely removed all legal paragraphs, disclaimers, and buffer tables from polluting the main screens.
+    - **Deleted `quoteSummaryDock`**:
+      - Completely eliminated the floating dock that was stacked above `BottomNavigationBar`, resolving the layout glitch permanently.
+- **Verification**:
+  - `npm run typecheck`: Passed with **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
+  - `npm test`: **30 / 30 tests passed**.
+  - **Live Android Emulator ADB Verification (`emulator-5554`)**:
+    - `screen_stage1_clean2.png`: Verified Stage 1 hero map, clean route card, saved places chips, and floating bottom navbar.
+    - `screen_stage2_vehicles.png`: Verified Stage 2 vehicle cards, 1-line add-ons, carriage terms link, and single bottom action card with bottom navbar hidden.
+    - `screen_policy_modal.png`: Verified Carriage & Buffer Policy modal sheet.
+    - `screen_stage3_booking.png`: Verified Stage 3 booking details and `SlideToConfirm`.
+    - `screen_back_verified.png` & `screen_back_to_stage1.png`: Verified seamless bidirectional navigation between all 3 stages.
