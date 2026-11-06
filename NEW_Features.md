@@ -453,3 +453,59 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - Verified live on Android Studio Pixel 9 Emulator via ADB:
       - Captured `cust_wallet_tab.png`: Verified tab reads "Wallet", Atarashi Plus Pass is removed, showing only clean wallet balance and trip history.
       - Captured `cust_booking_sheet.png` & `cust_booking_sheet_scroll.png`: Verified promo code input card and discount row are removed from Booking Details and Fare Breakdown.
+
+
+---
+
+## 2026-11-06 11:00 IST
+
+### Supabase Project Discovery, Render Backend Deployment & Google Maps Pinpointing
+- **Request:**
+  1. Identify where the Atarashi Logistics project is across the 3 connected Supabase accounts (using permanent access tokens in environment variables).
+  2. Deploy the backend API service to Render and connect the mobile apps to it.
+  3. Implement Google Maps Platform location selecting & interactive map pinpointing feature for drop-off and pickup.
+- **Goal:**
+  Unpause and restore the official Supabase database, deploy `apps/api` (Fastify 5 + TypeScript) as a live Docker container on Render, configure production environment variables, and build the interactive location picker and GPS pinpointing modal in the customer app.
+- **Key Actions & Discoveries:**
+  1. **Supabase Multi-Account Audit & Project Restoration**:
+     - Queried Supabase Management API across all 3 accounts:
+       - `SUPABASE_COMPANY_ATARASHIEV` (Org: *Atarashi Ev Pvt Ltd*, `qrvazcuuqrcydtsadndg`): Found the official **`Atarashi Logistics`** project (Ref: **`nbqliwsohowolmyooovs`**, `ap-south-1`).
+       - Status was `INACTIVE` (paused). Invoked `POST /v1/projects/nbqliwsohowolmyooovs/restore`.
+       - Monitored transition: `COMING_UP` -> `RESTORING` -> **`ACTIVE_HEALTHY`**.
+       - Verified all 16 tables exist (`vehicle_pricing`, `bookings`, `drivers`, `users`, `driver_kyc`, `wallet_transactions`, etc.).
+       - Seeded rate matrix into `vehicle_pricing` (`bike`: ₹12/km, `auto`: ₹18/km, `car`: ₹25/km, `pickup`: ₹35/km).
+       - Populated `.env` with production Supabase URL (`https://nbqliwsohowolmyooovs.supabase.co`) and API keys.
+       - Confirmed other 2 accounts for strict isolation: `SUPABASE_PERSONAL_AmpleanOrg` holds `ForgeOS` (`irndccmtzzhqtjonviax`), and `SUPABASE_PROFESSIONAL_SAGARORG` holds `Atarashi_EcoCharge` (`lingtlleqnqwvjbjfzcm`) and `Moveet_rental` (`tczrsmtcajmfxtlxmdfm`).
+  2. **Render Cloud Deployment**:
+     - Initialized git monorepo, untracked nested template `.git` folders in customer/driver apps, and published the private repository to GitHub: `https://github.com/sagar-tan/Atarashi-Logistics`.
+     - Created Web Service on Render using the `RENDER_GITHUB_LOGIN` API key:
+       - Service Name: `atarashi-logistics-api` (ID: `srv-dbmm5lutlv9c73bdqtdg`, Region: `singapore`).
+       - Dockerfile: `./apps/api/Dockerfile` (Node 22 multi-stage build).
+       - Injected production env vars: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT=8080`, `NODE_ENV=production`.
+       - Deployment succeeded: **`status=live`** at `https://atarashi-logistics-api.onrender.com`.
+       - Live verified: `GET /health` (`status: ok`) and `POST /v1/pricing/quote` (haversine distance, duration, integer paise fare calculation).
+  3. **Connected Mobile Apps to Render Backend**:
+     - Built `apps/customer/src/lib/api.ts` and `apps/driver/src/lib/api.ts`.
+     - Configured `EXPO_PUBLIC_API_BASE_URL=https://atarashi-logistics-api.onrender.com`.
+     - Hooked live quote updates on coordinate or vehicle class change, and live booking creation (`POST /v1/bookings`) with server-authoritative OTP and PIN.
+  4. **Google Maps Platform Integration & Location Pinpointing**:
+     - Implemented `apps/customer/src/lib/maps.ts`:
+       - Google Maps Places API (New) Autocomplete integration (`/v1/places:autocomplete`).
+       - Google Maps Geocoding API reverse geocoding (`/maps/api/geocode/json`).
+       - Curated Bengaluru logistics GIS dataset fallback for instant zero-latency UX.
+     - Built `apps/customer/src/components/location-picker-modal.tsx`:
+       - Neomorphic Light Mode modal with search bar, autocomplete suggestions, quick logistics hub chips.
+       - Stylized vector street grid map canvas with animated pulsing radar beacon and drop pin marker.
+       - Tap-to-pinpoint gesture support: tapping anywhere on the map dynamically updates coordinates and triggers reverse geocoding in real time.
+       - Coordinate readout pill and reverse geocoded address card.
+       - Capsule CTA button: "Confirm Drop-off Pin →".
+     - Enhanced `apps/customer/src/app/index.tsx`:
+       - Added "Pinpoint" badge buttons and live coordinate readouts to both Pickup and Delivery Destination cards.
+       - Tapping open the modal, repositions the pin, and confirms drop-off coordinates.
+       - Triggers immediate live pricing calculation via the Render backend.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces: **0 errors**.
+  - `npm test`: **30 / 30 tests passed**.
+  - Tested on Android Studio Pixel 9 emulator:
+    - Screen captures: `cust_pinpoint_check.png`, `cust_pinpoint_opened.png`, `cust_pinpoint_moved.png`, `cust_pinpoint_confirmed.png`.
+    - Confirmed pin movement, reverse-geocoded address display, and seamless confirmation.
