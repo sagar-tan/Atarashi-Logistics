@@ -12,6 +12,11 @@
     },
     "android": {
       "package": "com.atarashi.driver",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBR9AAM_0obBJGPKnS6KipiZ-_IM8VXfWU"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

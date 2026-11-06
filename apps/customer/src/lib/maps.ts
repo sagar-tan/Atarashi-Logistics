@@ -165,6 +165,37 @@ export async function searchLocationPlaces(query: string): Promise<LocationPredi
   ];
 }
 
+export async function fetchPlaceDetails(
+  placeId: string
+): Promise<{ coordinates: Coordinates; address?: string } | null> {
+  if (!GOOGLE_MAPS_KEY || !placeId) return null;
+  try {
+    const url = `https://places.googleapis.com/v1/places/${placeId}`;
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_MAPS_KEY,
+        'X-Goog-FieldMask': 'location,displayName,formattedAddress',
+      },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.location) {
+        return {
+          coordinates: {
+            latitude: Number(data.location.latitude),
+            longitude: Number(data.location.longitude),
+          },
+          address: data.formattedAddress,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[Google Maps] Place details fetch failed:', err);
+  }
+  return null;
+}
+
 export async function reverseGeocodeCoordinates(
   lat: number,
   lng: number

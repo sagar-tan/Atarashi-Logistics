@@ -664,3 +664,26 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
 - **Verification**:
   - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
   - `npm test`: **30 / 30 tests passed**.
+
+
+## 2026-11-06 13:40 IST
+
+### Google Maps Platform & Places API Key Integration & Resolution
+- **Request:** "The key is in a text document in document folder , look it up."
+- **Goal:** Locate the Google Maps Platform API key in the user's Documents folder, verify its active permissions on Google Cloud Platform, and wire it across root `.env`, `apps/customer/.env`, `apps/driver/.env`, `apps/customer/app.json`, and `apps/driver/app.json` with high-precision Google Places (New) coordinates resolution.
+- **Changes:**
+  - Located text document at `C:\Users\tw_strat\Documents\Atarashi_Gmaps_SDK.txt`.
+  - Extracted Google Maps Platform API key: `AIzaSyBR9AAM_0obBJGPKnS6KipiZ-_IM8VXfWU`.
+  - Tested key permissions live on Google Cloud:
+    - **Google Geocoding API**: Verified `200 OK` reverse-geocoding coordinates `12.9716, 77.5946` to Bengaluru, Karnataka address components.
+    - **Google Places API (New)**: Verified `200 OK` autocomplete suggestions for queries like `Koramangala`.
+    - **Google Places Details (New)**: Verified `200 OK` fetching exact coordinates and formatted addresses using Place ID (`ChIJLfyY2E4UrjsRVq4AjI7zgRY`).
+  - Configured key across the project:
+    - Added `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` to `.env`, `apps/customer/.env`, and `apps/driver/.env`.
+    - Added `android.config.googleMaps.apiKey` in `apps/customer/app.json` and `apps/driver/app.json`.
+  - Enhanced `apps/customer/src/lib/maps.ts`:
+    - Added `fetchPlaceDetails(placeId)` calling `https://places.googleapis.com/v1/places/${placeId}` with field mask `location,displayName,formattedAddress`.
+  - Updated `apps/customer/src/components/location-picker-modal.tsx`:
+    - Upgraded `handleSelectPrediction` to fetch high-precision coordinates directly from Google Places when a place suggestion is clicked, smoothly animating map pan and center pin to the exact GPS point.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors (PASSED)**.

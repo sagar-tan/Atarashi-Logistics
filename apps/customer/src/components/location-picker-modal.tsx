@@ -63,6 +63,7 @@ import { PillButton } from '@/components/ui/pill-button';
 import {
   BENGALURU_LOGISTICS_HUBS,
   LocationPrediction,
+  fetchPlaceDetails,
   reverseGeocodeCoordinates,
   searchLocationPlaces,
 } from '@/lib/maps';
@@ -313,17 +314,32 @@ export function LocationPickerModal({
   };
 
   // Prediction item selection
-  const handleSelectPrediction = (item: LocationPrediction) => {
+  const handleSelectPrediction = async (item: LocationPrediction) => {
     Keyboard.dismiss();
-    setSelectedAddress(item.fullAddress);
-    setSelectedCoords(item.coordinates);
-    setLandmarkName(item.primaryText);
+    let coords = item.coordinates;
+    let fullAddr = item.fullAddress;
+    let primary = item.primaryText;
+
+    // Fetch high-precision GPS coordinates from Google Places if available
+    if (item.id && (item.id.startsWith('ChIJ') || item.id.length > 20)) {
+      const details = await fetchPlaceDetails(item.id);
+      if (details) {
+        coords = details.coordinates;
+        if (details.address) {
+          fullAddr = details.address;
+        }
+      }
+    }
+
+    setSelectedAddress(fullAddr);
+    setSelectedCoords(coords);
+    setLandmarkName(primary);
     setSearchQuery('');
     setPredictions([]);
 
     // Calculate delta relative to initialCoords
-    const latDiff = item.coordinates.latitude - initialCoords.latitude;
-    const lngDiff = item.coordinates.longitude - initialCoords.longitude;
+    const latDiff = coords.latitude - initialCoords.latitude;
+    const lngDiff = coords.longitude - initialCoords.longitude;
 
     const targetX = (lngDiff / 0.005) * 100;
     const targetY = -(latDiff / 0.005) * 100;
