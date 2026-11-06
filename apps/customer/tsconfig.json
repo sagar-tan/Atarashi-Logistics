@@ -11,5 +11,18 @@
       ]
     }
   },
-  "include": ["src/app/**/*.tsx", "src/lib/**/*.ts", "src/components/ui/**/*.tsx", "src/components/ui/**/*.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": [
+    "src/app/**/*.tsx",
+    "src/lib/**/*.ts",
+    "src/components/ui/**/*.tsx",
+    "src/components/ui/**/*.ts",
+    "src/components/location-picker-modal.tsx",
+    "src/components/slide-to-confirm.tsx",
+    "src/components/b2b-gstin-modal.tsx",
+    "src/components/multi-stop-route-card.tsx",
+    "src/components/loading-buffer-pill.tsx",
+    "src/components/packers-movers-modal.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
 }

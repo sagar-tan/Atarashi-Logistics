@@ -58,6 +58,11 @@ import { NeomorphCard } from '@/components/ui/neomorph-card';
 import { PillButton } from '@/components/ui/pill-button';
 import { PillTabs } from '@/components/ui/pill-tabs';
 import { LocationPickerModal } from '@/components/location-picker-modal';
+import { SlideToConfirm } from '@/components/slide-to-confirm';
+import { B2BGSTINModal } from '@/components/b2b-gstin-modal';
+import { MultiStopRouteCard, RouteStop } from '@/components/multi-stop-route-card';
+import { LoadingBufferPill } from '@/components/loading-buffer-pill';
+import { PackersMoversModal } from '@/components/packers-movers-modal';
 import { TactileCard } from '@/components/ui/tactile-card';
 import { TactileMap } from '@/components/ui/tactile-map';
 import { api } from '@/lib/api';
@@ -227,6 +232,36 @@ export default function CustomerHomeScreen() {
   const deliveryPin = '9412';
 
   // Modals State
+  const [showGstinModal, setShowGstinModal] = useState(false);
+  const [gstin, setGstin] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [showPackersMovers, setShowPackersMovers] = useState(false);
+  const [pickupStop, setPickupStop] = useState<RouteStop>({
+    id: 'stop_pickup',
+    address: 'Indiranagar 100ft Rd, HAL 2nd Stage, Bengaluru',
+    coordinates: { latitude: 12.9716, longitude: 77.6412 },
+    contact: {
+      name: 'Rahul Verma',
+      phone: '+91 98765 43210',
+      tag: 'Home',
+      useMyNumber: true,
+      houseDetails: 'Flat 402, Green Glen',
+    },
+  });
+  const [dropStops, setDropStops] = useState<RouteStop[]>([
+    {
+      id: 'stop_drop_1',
+      address: 'Koramangala 4th Block, 80ft Road, Bengaluru',
+      coordinates: { latitude: 12.9352, longitude: 77.6245 },
+      contact: {
+        name: 'Priya Sharma',
+        phone: '+91 98111 22334',
+        tag: 'Shop',
+        useMyNumber: false,
+        houseDetails: 'Shop 12, Main Market',
+      },
+    },
+  ]);
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatMessages, setChatMessages] = useState<string[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -313,6 +348,50 @@ export default function CustomerHomeScreen() {
     const tempCoords = pickupCoords;
     setPickupCoords(dropoffCoords);
     setDropoffCoords(tempCoords);
+
+    if (dropStops.length > 0) {
+      const firstDrop = dropStops[0];
+      const oldPickup = pickupStop;
+      setPickupStop({
+        ...firstDrop,
+        id: 'stop_pickup',
+      });
+      setDropStops([
+        {
+          ...oldPickup,
+          id: firstDrop.id,
+        },
+        ...dropStops.slice(1),
+      ]);
+    }
+  };
+
+  const handleAddDropStop = () => {
+    if (dropStops.length >= 2) {
+      Alert.alert('Max Stops Reached', 'You can add up to 2 delivery destinations per route.');
+      return;
+    }
+    const newStop: RouteStop = {
+      id: `stop_drop_${Date.now()}`,
+      address: 'HSR Layout Sector 5, Bengaluru',
+      coordinates: { latitude: 12.9121, longitude: 77.6446 },
+      contact: {
+        name: 'Ankit Patel',
+        phone: '+91 97234 56789',
+        tag: 'Other',
+        useMyNumber: false,
+        houseDetails: 'Tower B, Tech Park',
+      },
+    };
+    setDropStops([...dropStops, newStop]);
+  };
+
+  const handleRemoveDropStop = (idx: number) => {
+    if (dropStops.length <= 1) {
+      Alert.alert('Required Stop', 'At least one delivery destination is required.');
+      return;
+    }
+    setDropStops(dropStops.filter((_, i) => i !== idx));
   };
 
   // Next step simulation in active tracking
@@ -407,92 +486,61 @@ export default function CustomerHomeScreen() {
   // ==========================================
   const renderSendParcelTab = () => (
     <View>
-      {/* Route & Address Card */}
-      <NeomorphCard style={styles.routeCard}>
-        <View style={styles.routeHeader}>
-          <Text style={styles.routeHeaderTitle}>DELIVERY ROUTE</Text>
-          <TouchableOpacity
-            style={styles.swapButton}
-            onPress={handleSwapAddresses}
-            activeOpacity={0.8}
-            accessibilityLabel="Swap pickup and dropoff addresses"
-          >
-            <ArrowUpDown size={15} color={colors.primaryDark} />
-            <Text style={styles.swapText}>Swap</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Pickup Row */}
-        <TouchableOpacity
-          style={styles.addressRow}
-          activeOpacity={0.7}
-          onPress={() => {
+      {/* Porter-Grade Multi-Stop Route Card */}
+      <MultiStopRouteCard
+        pickup={{
+          ...pickupStop,
+          address: pickupAddress,
+          coordinates: pickupCoords,
+        }}
+        drops={dropStops.map((d, i) =>
+          i === 0
+            ? { ...d, address: dropoffAddress, coordinates: dropoffCoords }
+            : d
+        )}
+        distanceKm={distanceKm}
+        travelMins={travelMins}
+        onReverseRoute={handleSwapAddresses}
+        onAddStop={handleAddDropStop}
+        onRemoveStop={handleRemoveDropStop}
+        onEditLocation={(target) => {
+          if (target === 'pickup') {
             setPickerTarget('pickup');
-            setShowLocationPicker(true);
-          }}
-        >
-          <View style={styles.pinCirclePickup}>
-            <View style={styles.pinDotPickup} />
-          </View>
-          <View style={styles.addressInfo}>
-            <View style={styles.addressLabelRow}>
-              <Text style={styles.addressLabel}>PICKUP POINT</Text>
-              <View style={styles.pinpointBadge}>
-                <Crosshair size={10} color={colors.primaryDark} />
-                <Text style={styles.pinpointBadgeText}>Pinpoint</Text>
-              </View>
-            </View>
-            <Text style={styles.addressValue} numberOfLines={1}>
-              {pickupAddress}
-            </Text>
-            <Text style={styles.addressSub}>
-              {pickupCoords.latitude.toFixed(4)}° N, {pickupCoords.longitude.toFixed(4)}° E
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.routeDividerLine} />
-
-        {/* Dropoff Row */}
-        <TouchableOpacity
-          style={styles.addressRow}
-          activeOpacity={0.7}
-          onPress={() => {
+          } else {
             setPickerTarget('dropoff');
-            setShowLocationPicker(true);
-          }}
-        >
-          <View style={styles.pinCircleDropoff}>
-            <View style={styles.pinDotDropoff} />
-          </View>
-          <View style={styles.addressInfo}>
-            <View style={styles.addressLabelRow}>
-              <Text style={styles.addressLabel}>DELIVERY DESTINATION</Text>
-              <View style={styles.pinpointBadge}>
-                <Crosshair size={10} color={colors.primaryDark} />
-                <Text style={styles.pinpointBadgeText}>Pinpoint</Text>
-              </View>
-            </View>
-            <Text style={styles.addressValue} numberOfLines={1}>
-              {dropoffAddress}
-            </Text>
-            <Text style={styles.addressSub}>
-              {dropoffCoords.latitude.toFixed(4)}° N, {dropoffCoords.longitude.toFixed(4)}° E
-            </Text>
-          </View>
-        </TouchableOpacity>
+          }
+          setShowLocationPicker(true);
+        }}
+        onUpdatePickupContact={(c) => setPickupStop((prev) => ({ ...prev, contact: c }))}
+        onUpdateDropContact={(idx, c) =>
+          setDropStops((prev) =>
+            prev.map((stop, i) => (i === idx ? { ...stop, contact: c } : stop))
+          )
+        }
+      />
 
-        <View style={styles.routeMetricsRow}>
-          <View style={styles.metricPill}>
-            <MapPin size={12} color={colors.primaryDark} />
-            <Text style={styles.metricPillText}>{distanceKm} km estimated</Text>
-          </View>
-          <View style={styles.metricPill}>
-            <Clock size={12} color={colors.primaryDark} />
-            <Text style={styles.metricPillText}>~{travelMins} mins travel time</Text>
-          </View>
+      {/* Packers & Movers Porter Shifting Card */}
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={() => setShowPackersMovers(true)}
+        style={styles.packersMoversBanner}
+      >
+        <View style={styles.packersMoversIconBox}>
+          <Building2 size={22} color={colors.primaryDark} />
         </View>
-      </NeomorphCard>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.packersMoversTitle}>Packers & Movers</Text>
+            <View style={styles.newBadgePill}>
+              <Text style={styles.newBadgeText}>PORTED</Text>
+            </View>
+          </View>
+          <Text style={styles.packersMoversSubtitle} numberOfLines={1}>
+            House shifting • Multi-layer packing • Labor included
+          </Text>
+        </View>
+        <ChevronRight size={18} color={colors.textMuted} />
+      </TouchableOpacity>
 
       {/* Vehicle Selector */}
       <View style={styles.sectionHeaderRow}>
@@ -666,6 +714,15 @@ export default function CustomerHomeScreen() {
           </View>
         </TouchableOpacity>
       </NeomorphCard>
+
+      {/* Loading & Buffer Operational Policy Card */}
+      <View style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>
+        <LoadingBufferPill
+          variant="card"
+          freeMinutes={25}
+          overageRatePaise={200}
+        />
+      </View>
     </View>
   );
 
@@ -959,6 +1016,32 @@ export default function CustomerHomeScreen() {
         </TouchableOpacity>
       </NeomorphCard>
 
+      {/* B2B Business Invoicing / GSTIN */}
+      <NeomorphCard style={styles.paymentMethodCard}>
+        <View style={styles.gstinHeaderRow}>
+          <View style={styles.gstinIconBox}>
+            <Building2 size={18} color={colors.primaryDark} />
+          </View>
+          <View style={styles.gstinTitleCol}>
+            <Text style={styles.formSectionTitle}>B2B BUSINESS INVOICE</Text>
+            <Text style={styles.gstinSubtitle} numberOfLines={1}>
+              {gstin
+                ? `${gstin}${businessName ? ` • ${businessName}` : ''}`
+                : 'Add GSTIN to claim 18% Input Tax Credit'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.gstinEditBtn}
+            onPress={() => setShowGstinModal(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Configure B2B GSTIN"
+          >
+            <Text style={styles.gstinEditBtnText}>{gstin ? 'Edit' : '+ Add'}</Text>
+          </TouchableOpacity>
+        </View>
+      </NeomorphCard>
+
       {/* Itemized Fare Breakdown */}
       <NeomorphCard style={styles.breakdownCard}>
         <Text style={styles.formSectionTitle}>FARE BREAKDOWN</Text>
@@ -993,15 +1076,14 @@ export default function CustomerHomeScreen() {
         </View>
       </NeomorphCard>
 
-      {/* Book Delivery CTA */}
-      <PillButton
-        title={`Book Delivery • ${formatPaise(finalTotalPaise)}`}
-        variant="dark"
-        size="lg"
-        icon={<ArrowRight size={19} color={colors.onDark} />}
-        style={styles.bookDeliveryBtn}
-        onPress={handleBookDelivery}
-      />
+      {/* Slide to Confirm Booking CTA */}
+      <View style={styles.slideConfirmContainer}>
+        <SlideToConfirm
+          text={`Slide to Book • ${formatPaise(finalTotalPaise)}`}
+          confirmedText="Dispatching Courier..."
+          onConfirm={handleBookDelivery}
+        />
+      </View>
     </View>
   );
 
@@ -1766,6 +1848,33 @@ export default function CustomerHomeScreen() {
           }
         }}
       />
+
+      {/* B2B GSTIN Invoicing Modal */}
+      <B2BGSTINModal
+        visible={showGstinModal}
+        currentGstin={gstin}
+        currentBusinessName={businessName}
+        onClose={() => setShowGstinModal(false)}
+        onSave={(newGstin, newBizName) => {
+          setGstin(newGstin);
+          setBusinessName(newBizName);
+        }}
+      />
+
+      {/* Packers & Movers 3-Step Shifting Flow Modal */}
+      <PackersMoversModal
+        visible={showPackersMovers}
+        onClose={() => setShowPackersMovers(false)}
+        pickupAddress={pickupAddress}
+        dropAddress={dropoffAddress}
+        onBookingConfirmed={(shiftingDetails) => {
+          setShowPackersMovers(false);
+          Alert.alert(
+            'Shifting Scheduled!',
+            `House shifting scheduled for ${shiftingDetails.schedule.dateLabel} (${shiftingDetails.schedule.timeSlot}). Total: ₹${shiftingDetails.totalFareRupees}`
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -1867,6 +1976,49 @@ const styles = StyleSheet.create({
   },
 
   // Route & Address Card
+  packersMoversBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...theme.shadows.card,
+  },
+  packersMoversIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  packersMoversTitle: {
+    fontSize: sizes.base,
+    fontWeight: '700',
+    color: colors.dark,
+    marginRight: 8,
+  },
+  packersMoversSubtitle: {
+    fontSize: sizes.xs,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  newBadgePill: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: theme.radius.pill,
+  },
+  newBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.dark,
+    letterSpacing: 0.5,
+  },
   routeCard: {
     marginTop: spacing.xs,
     padding: spacing.md,
@@ -2578,6 +2730,44 @@ const styles = StyleSheet.create({
   },
   bookDeliveryBtn: {
     marginBottom: spacing.lg,
+  },
+  slideConfirmContainer: {
+    marginBottom: spacing.lg,
+  },
+  gstinHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  gstinIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gstinTitleCol: {
+    flex: 1,
+  },
+  gstinSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  gstinEditBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radius.pill,
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  gstinEditBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primaryDark,
   },
 
   // Phase 3: Finding Driver Radar

@@ -565,3 +565,102 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
       - Free 25 mins loading/unloading buffer policy with ₹2/min overage rate.
       - Restricted goods warning and categorized goods selector (`Electronics`, `FMCG`, `Furnitures`, etc.).
       - Transparent fare breakdown card with coupon savings and integer rupee rounding.
+
+
+## 2026-11-06 12:20 IST
+
+### Multi-Stop Route Card & Transparent Loading Buffer Pill Components
+- **Request:** Create `apps/customer/src/components/multi-stop-route-card.tsx` and `apps/customer/src/components/loading-buffer-pill.tsx` following Porter's route management and operational dispatch patterns under strict Neomorphic Light Mode design system and Integer PAISE monetary rules.
+- **Goal:** Provide production-ready, accessible, modular route management (reverser `⇅`, pickup & multi-drop stops, `+ Add Stop`, sender/receiver contact modal, address tags `Home`/`Shop`/`Other`) and transparent loading buffer / policy cards (25m free loading, ₹2.0/min overage rate in paise, restricted cargo warning, and toll/parking terms).
+- **Changes:**
+  - Created `apps/customer/src/components/multi-stop-route-card.tsx`:
+    - Header with route reversal button (`ArrowUpDown`), stop count badge, and route metrics.
+    - Green circular indicator (`ArrowUp`) for Pickup Stop, sender details summary, quick pinpoint button, and contact editor trigger.
+    - SVG dotted vertical connector connecting stops cleanly.
+    - Red/coral circular indicator (`ArrowDown`) for Drop Stop(s) (supports up to 2 drop stops), receiver contact summary, pinpoint trigger, and `(X)` remove stop button when multiple stops exist.
+    - `+ Add Stop` button allowing batch deliveries along the dispatch route up to `maxDrops`.
+    - Integrated Neomorphic Contact Expansion Modal: "Use my mobile number" toggle, Name/Phone inputs, Address Tag selectors (`Home`, `Shop`, `Other`), and House/Floor/Apartment info.
+  - Created `apps/customer/src/components/loading-buffer-pill.tsx`:
+    - Policy banner: Clock icon + "Free 25 mins of loading-unloading time included (₹2.0/min overage rate)" with integer paise pricing (`200` paise = ₹2.0/min).
+    - Safety compliance disclaimer: `AlertTriangle` icon + "Do not send restricted or illegal items (explosives, flammables, narcotics)".
+    - Transparent fare terms: `ShieldCheck` icon + "Toll included in fare • Parking charges to be paid by customer".
+    - Multi-variant rendering: `card` (comprehensive neomorphic card), `pill` (compact bottom-sheet pill), and `banner` (single-row strip).
+    - Detailed logistics policy modal showing itemized rules, prohibited goods breakdown, and toll/parking reimbursement terms.
+  - Verified with `npm run typecheck` across all workspaces (`customer`, `driver`, `admin`, `api`): 0 errors.
+
+## 2026-11-06 12:25 IST
+
+### Packers & Movers 3-Step Shifting Flow Modal Component
+- **Request:** Create `apps/customer/src/components/packers-movers-modal.tsx`: A complete, production-grade 3-step shifting flow modal directly based on Porter's shifting workflow under strict Neomorphic Light Mode design system and Integer PAISE monetary rules.
+- **Goal:** Deliver an end-to-end relocation booking experience with linear step navigation, building accessibility inputs, itemized inventory management with real-time room estimation, dynamic date/slot scheduling, multi-layer packing tiers, and slide-to-confirm dispatch.
+- **Changes:**
+  - Created `apps/customer/src/components/packers-movers-modal.tsx`:
+    - **Header & Navigation**: "House Shifting" modal header with Back button, step breadcrumbs, and "Help & FAQs" action opening an integrated 5-question accordion sheet with customer care contact info.
+    - **Linear 3-Step Stepper**: Tactile step tracker `(1) Moving details` -> `(2) Add items` -> `(3) Schedule` with checkmarks and direct step jumping.
+    - **Step 1: Moving details**:
+      - Pickup & Drop location cards with floor level chips (`Ground Floor`, `1st Floor`, `2nd Floor`, `3rd Floor`, `4th Floor`, `5th+ Floor`).
+      - Building accessibility selector chips for both locations: `[ Lift available ]`, `[ No lift ]`, `[ Ground floor ]`.
+      - Shifting trust guarantees: Dedicated Tata 407/Eicher container truck, trained crew, zero damage guarantee.
+      - "Check Price & Add Items →" capsule action.
+    - **Step 2: Add items (Inventory Catalog)**:
+      - Search bar with real-time text filter.
+      - Category filter pills with item count badges: `Hall`, `Bedroom`, `Kitchen`, `Others`.
+      - Comprehensive item catalog:
+        - Hall: Single seater sofa, 2 seater sofa, 3 seater sofa, Recliner, Chairs, Center Table, Dining Table, TV/Monitor, Cabinet, Mandir.
+        - Bedroom: King Bed, Queen Bed, Mattress, Wardrobe, AC, Dressing Table.
+        - Kitchen: Refrigerator, Washing Machine, Microwave, Gas Stove, Kitchen Box Cartons.
+        - Others: Study Table / Desk, Office Chair, Shoe Rack, Storage Box, Luggage / Suitcase, Bicycle, Water Purifier (RO), Clothes Stand.
+      - Neomorphic stepper counters (`+ Add` turns into `[ - ] count [ + ]`).
+      - Sticky bottom summary: Item count, home size estimator (`1 BHK equivalent • 8ft Truck`, `2 BHK`, etc.), and "Proceed to Schedule →" capsule button.
+    - **Step 3: Schedule & Review**:
+      - Horizontal dynamic date picker chips: Next 5 days (`Today`, `Tomorrow`, `+2d`, `+3d`, `+4d`) with dynamic pricing in integer paise.
+      - Time of day tabs: `Morning (8AM - 12PM)`, `Afternoon (12PM - 4PM)`, `Evening (4PM - 7PM)`.
+      - Hourly slots radio list (`8:00 AM - 9:00 AM`, `9:00 AM - 10:00 AM`, etc.) with demand tags (`Fast filling`, `Popular`, `Available`).
+      - Packing options: `SUPERIOR Multi-layer packing` (₹499 / 49900 paise with bubble wrap & 3-ply sheets) vs `No packing` (₹0 / 0 paise).
+      - Optional Add-ons: `Unpacking all items (+₹199 / 19900 paise)` and `Carpentry & Dismantling (+₹299 / 29900 paise)`.
+      - Fare Summary Breakdown: Base fare, extra inventory volume surcharge, stair carry surcharge (if no lift), packing fee, add-ons, subtotal, and "Pay after shifting completion" guarantee.
+      - Confirmation: Tactile `SlideToConfirm` (`Slide to Book • ₹...`) and backup capsule button calling `onBookingConfirmed(details)`.
+  - Strict Neomorphic Light Mode theme styling (Chalk `#F4F7F4`, `#FFFFFF` cards with soft shadows, mint `#6EE787`, capsule pills, zero glassmorphism).
+  - Strict Currency Invariant: All financial data modeled and calculated in integer PAISE (`100 paise = ₹1.00`).
+  - Verified with `npm --prefix apps/customer run typecheck`: 0 errors.
+
+
+
+## 2026-11-06 12:30 IST
+
+### Slide-to-Confirm Continuous Capsule Slider, Porter Pinpoint Map UX & B2B GSTIN Invoicing Modal
+- **Request:** Build `apps/customer/src/components/slide-to-confirm.tsx`, update or enhance `apps/customer/src/components/location-picker-modal.tsx` with the Porter pinpoint UX, and create `apps/customer/src/components/b2b-gstin-modal.tsx` under strict Neomorphic Light Mode design system, and verify with `npm run typecheck`.
+- **Goal:** Provide tactile slide-to-confirm continuous slider dispatch preventing accidental orders, implement full Porter center-pinned map pinpointing with directional speech bubbles, floating road name cards, and GPS/fullscreen controls, and add B2B GSTIN compliance for Input Tax Credit invoicing.
+- **Changes:**
+  - **Created `apps/customer/src/components/slide-to-confirm.tsx`**:
+    - Interactive slide-to-confirm continuous capsule slider built using React Native `PanResponder` and `Animated`.
+    - Props: `onConfirm: () => void`, `text?: string` (default: "Slide to Confirm Booking"), `confirmedText?: string`, `disabled?: boolean`, `confirmed?: boolean`.
+    - Continuous capsule geometry (`borderRadius: 9999`, height 56px, chalk track `#EDF2EE`, hairline border `#E2E9E3`, neomorphic drop shadow).
+    - 48px circular dark charcoal thumb (`#111813`) containing `ChevronRight` in vibrant mint green (`#6EE787`). Enticing arrow pulse animation.
+    - Expanding mint green progress track (`#6EE787`) following thumb position in real time.
+    - Centered high-contrast prompt typography ("Slide to Confirm Booking ›››") that gracefully fades as the thumb advances past 45%.
+    - Smooth 60fps spring snap-back animation when released below the 75% threshold; locks and triggers `onConfirm()` with `Check` icon when reaching >= 75%.
+  - **Enhanced `apps/customer/src/components/location-picker-modal.tsx`**:
+    - Implemented authentic Porter Pinpoint UX:
+      - Fixed center pin with directional speech bubble tooltip:
+        - Mode `'pickup'`: Speech bubble *"Your goods will be picked from here"*, green circular pin (`#2F8544`) with `ArrowUp`, contact shadow dot.
+        - Mode `'dropoff'`: Speech bubble *"Your goods will be dropped here"*, coral/red circular pin (`#DC2626`) with `ArrowDown`, contact shadow dot.
+      - Map drag & pan gesture support underneath the fixed center pin via `PanResponder`, plus tap-to-recenter. Tactile pin lift during drag and spring drop with contact shadow scaling upon release.
+      - Floating reverse-geocoded road name card positioned directly above the bottom button, showing bold road/landmark name, subtitle address, and coordinate readouts.
+      - Floating map controls: Recenter GPS button (`LocateFixed`) and Fullscreen view toggle (`Maximize2` / `Minimize2`).
+      - Autocomplete search bar with clear button (`X`) and real-time dropdown predictions list.
+      - Continuous capsule "Confirm Location" CTA (`PillButton`).
+  - **Created `apps/customer/src/components/b2b-gstin-modal.tsx`**:
+    - Modal for entering B2B GSTIN and Business Name for Input Tax Credit.
+    - Props: `visible: boolean`, `onClose: () => void`, `onSave: (gstin: string, businessName: string) => void`, `currentGstin?: string`, `currentBusinessName?: string`.
+    - 15-character auto-capitalized input with strict regex validation: `^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$`.
+    - Indian state code lookup (e.g. 29 -> Karnataka, 27 -> Maharashtra, etc.) with real-time feedback.
+    - Optional Registered Business Legal Name input.
+    - Neomorphic styling with archive box icon (`Archive`), benefit copy ("Get invoices with GSTIN to claim Input Tax Credit on logistics & parcel dispatch under Indian GST law"), and continuous capsule Save button.
+  - **Integrated into Customer Booking Flow (`apps/customer/src/app/index.tsx`)**:
+    - Added B2B Business Invoicing card in `renderBookingSheet()`, opening `B2BGSTINModal` with live state persistence.
+    - Upgraded Booking CTA in `renderBookingSheet()` to use `SlideToConfirm` (`Slide to Book • ₹...`).
+    - Added `<B2BGSTINModal />` to overlay modal stack.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
+  - `npm test`: **30 / 30 tests passed**.
