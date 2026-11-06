@@ -63,6 +63,7 @@ import { B2BGSTINModal } from '@/components/b2b-gstin-modal';
 import { MultiStopRouteCard, RouteStop } from '@/components/multi-stop-route-card';
 import { LoadingBufferPill } from '@/components/loading-buffer-pill';
 import { PackersMoversModal } from '@/components/packers-movers-modal';
+import { BottomNavigationBar, CustomerNavigationTab } from '@/components/bottom-navigation-bar';
 import { TactileCard } from '@/components/ui/tactile-card';
 import { TactileMap } from '@/components/ui/tactile-map';
 import { api } from '@/lib/api';
@@ -174,7 +175,8 @@ export default function CustomerHomeScreen() {
 
   // Navigation / Phase State
   const [customerState, setCustomerState] = useState<CustomerState>('explore_quote');
-  const [overviewTab, setOverviewTab] = useState<OverviewTab>('send_parcel');
+  const [navTab, setNavTab] = useState<CustomerNavigationTab>('dispatch');
+  const [serviceMode, setServiceMode] = useState<'parcel' | 'freight' | 'shifting'>('parcel');
 
   // Booking Configuration State
   const [pickupAddress, setPickupAddress] = useState('Indiranagar 100ft Road, Bengaluru');
@@ -519,37 +521,91 @@ export default function CustomerHomeScreen() {
         }
       />
 
-      {/* Packers & Movers Porter Shifting Card */}
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={() => setShowPackersMovers(true)}
-        style={styles.packersMoversBanner}
-      >
-        <View style={styles.packersMoversIconBox}>
-          <Building2 size={22} color={colors.primaryDark} />
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.packersMoversTitle}>Packers & Movers</Text>
-            <View style={styles.newBadgePill}>
-              <Text style={styles.newBadgeText}>PORTED</Text>
-            </View>
-          </View>
-          <Text style={styles.packersMoversSubtitle} numberOfLines={1}>
-            House shifting • Multi-layer packing • Labor included
+      {/* Service Mode Selector - Clean Luxury Monochrome Tabs */}
+      <View style={styles.serviceModeContainer}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            setServiceMode('parcel');
+            setSelectedVehicle('bike');
+          }}
+          style={[
+            styles.serviceModeTab,
+            serviceMode === 'parcel' && styles.serviceModeTabActive,
+          ]}
+          accessibilityRole="tab"
+          accessibilityLabel="Express Parcel service"
+        >
+          <Bike
+            size={16}
+            color={serviceMode === 'parcel' ? colors.onDark : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.serviceModeLabel,
+              serviceMode === 'parcel' && styles.serviceModeLabelActive,
+            ]}
+          >
+            Express Parcel
           </Text>
-        </View>
-        <ChevronRight size={18} color={colors.textMuted} />
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            setServiceMode('freight');
+            setSelectedVehicle('car');
+          }}
+          style={[
+            styles.serviceModeTab,
+            serviceMode === 'freight' && styles.serviceModeTabActive,
+          ]}
+          accessibilityRole="tab"
+          accessibilityLabel="Freight and Trucks service"
+        >
+          <Truck
+            size={16}
+            color={serviceMode === 'freight' ? colors.onDark : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.serviceModeLabel,
+              serviceMode === 'freight' && styles.serviceModeLabelActive,
+            ]}
+          >
+            Freight Trucks
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            setShowPackersMovers(true);
+          }}
+          style={styles.serviceModeTab}
+          accessibilityRole="button"
+          accessibilityLabel="Packers and Movers House Shifting"
+        >
+          <Building2 size={16} color={colors.textPrimary} />
+          <Text style={styles.serviceModeLabel}>
+            House Shifting
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Vehicle Selector */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Select Vehicle Class</Text>
-        <Text style={styles.sectionSubtitle}>Porter-Grade Dispatch</Text>
+        <Text style={styles.sectionTitle}>
+          {serviceMode === 'freight' ? 'Commercial Freight Fleet' : 'City Express Fleet'}
+        </Text>
+        <Text style={styles.sectionSubtitle}>Select Vehicle</Text>
       </View>
 
       <View style={styles.vehiclesGrid}>
-        {VEHICLE_CATALOG.map((v) => {
+        {(serviceMode === 'freight'
+          ? VEHICLE_CATALOG.filter((v) => v.type === 'car' || v.type === 'pickup')
+          : VEHICLE_CATALOG.filter((v) => v.type === 'bike' || v.type === 'auto')
+        ).map((v) => {
           const isSelected = v.type === selectedVehicle;
           return (
             <TouchableOpacity
@@ -568,7 +624,7 @@ export default function CustomerHomeScreen() {
                     isSelected && styles.vehicleIconTileSelected,
                   ]}
                 >
-                  {v.icon(isSelected ? colors.onDark : colors.primaryDark)}
+                  {v.icon(isSelected ? colors.onDark : colors.textPrimary)}
                 </View>
                 <View style={styles.vehicleFareTag}>
                   <Text style={styles.vehicleFareText}>{formatPaise(v.baseFarePaise)}</Text>
@@ -589,7 +645,7 @@ export default function CustomerHomeScreen() {
 
               {isSelected && (
                 <View style={styles.selectedCheckPill}>
-                  <Check size={11} color={colors.onPrimary} strokeWidth={3} />
+                  <Check size={11} color={colors.onDark} strokeWidth={3} />
                   <Text style={styles.selectedCheckText}>SELECTED</Text>
                 </View>
               )}
@@ -738,7 +794,7 @@ export default function CustomerHomeScreen() {
         style={styles.placeItem}
         onPress={() => {
           setDropoffAddress('Flat 402, Green Glen Heights, Koramangala');
-          setOverviewTab('send_parcel');
+          setNavTab('dispatch');
           Alert.alert('Address Set', 'Set Home as dropoff destination!');
         }}
       >
@@ -756,7 +812,7 @@ export default function CustomerHomeScreen() {
         style={styles.placeItem}
         onPress={() => {
           setPickupAddress('WeWork Galaxy, 43 Residency Rd, Shanthala Nagar');
-          setOverviewTab('send_parcel');
+          setNavTab('dispatch');
           Alert.alert('Address Set', 'Set Work as pickup point!');
         }}
       >
@@ -774,7 +830,7 @@ export default function CustomerHomeScreen() {
         style={styles.placeItem}
         onPress={() => {
           setPickupAddress('Atarashi Hub 3, 100ft Road, Indiranagar');
-          setOverviewTab('send_parcel');
+          setNavTab('dispatch');
           Alert.alert('Address Set', 'Set Warehouse as pickup point!');
         }}
       >
@@ -859,6 +915,159 @@ export default function CustomerHomeScreen() {
       </NeomorphCard>
     </View>
   );
+
+  // ==========================================
+  // Render: Activity & Order History Tab
+  // ==========================================
+  const renderActivityTab = () => {
+    if (customerState === 'active_tracking') {
+      return renderActiveTracking();
+    }
+
+    return (
+      <View style={styles.tabContentContainer}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Shipments & Activity</Text>
+          <Text style={styles.sectionSubtitle}>Real-time delivery history</Text>
+        </View>
+
+        {/* Live Tracking Cockpit Simulator Trigger Card */}
+        <NeomorphCard style={styles.activityHeroCard}>
+          <View style={styles.activityHeroRow}>
+            <View style={styles.activityIconBox}>
+              <Clock size={20} color={colors.dark} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.activityHeroTitle}>Live Delivery Cockpit</Text>
+              <Text style={styles.activityHeroSubtitle}>
+                Inspect active courier telemetry, pickup OTP & real-time progress.
+              </Text>
+            </View>
+          </View>
+          <View style={styles.activityHeroActions}>
+            <PillButton
+              title="Launch Live Tracking Cockpit"
+              variant="dark"
+              size="sm"
+              icon={<ArrowRight size={15} color={colors.onDark} />}
+              onPress={() => {
+                setCustomerState('active_tracking');
+                setNavTab('activity');
+              }}
+            />
+          </View>
+        </NeomorphCard>
+
+        {/* Completed Deliveries Header */}
+        <View style={[styles.sectionHeaderRow, { marginTop: spacing.lg }]}>
+          <Text style={styles.sectionTitle}>Completed Orders</Text>
+          <Text style={styles.sectionSubtitle}>Recent Deliveries</Text>
+        </View>
+
+        {/* Delivery Item 1 */}
+        <NeomorphCard style={styles.historyCard}>
+          <View style={styles.historyCardHeader}>
+            <View style={styles.historyVehicleBadge}>
+              <Bike size={14} color={colors.dark} />
+              <Text style={styles.historyVehicleText}>Bike Express • #AT-84920</Text>
+            </View>
+            <View style={styles.historyStatusPill}>
+              <Check size={11} color={colors.dark} strokeWidth={3} />
+              <Text style={styles.historyStatusText}>DELIVERED</Text>
+            </View>
+          </View>
+
+          <View style={styles.historyRouteBlock}>
+            <View style={styles.historyRouteRow}>
+              <View style={styles.historyDotPickup} />
+              <Text style={styles.historyAddressText} numberOfLines={1}>
+                Indiranagar 100ft Road, Bengaluru
+              </Text>
+            </View>
+            <View style={styles.historyRouteConnector} />
+            <View style={styles.historyRouteRow}>
+              <View style={styles.historyDotDrop} />
+              <Text style={styles.historyAddressText} numberOfLines={1}>
+                Koramangala 4th Block, Bengaluru
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.historyFooter}>
+            <View>
+              <Text style={styles.historyFareLabel}>TOTAL PAID</Text>
+              <Text style={styles.historyFareValue}>₹ 200.00</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.invoiceBtn}
+              onPress={() =>
+                Alert.alert(
+                  'Digital Tax Invoice',
+                  'Invoice for #AT-84920 downloaded.\nAmount: ₹ 200.00 (Incl. 18% GST ₹30.51)'
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Download tax invoice"
+            >
+              <FileText size={13} color={colors.dark} />
+              <Text style={styles.invoiceBtnText}>Tax Invoice</Text>
+            </TouchableOpacity>
+          </View>
+        </NeomorphCard>
+
+        {/* Delivery Item 2 */}
+        <NeomorphCard style={styles.historyCard}>
+          <View style={styles.historyCardHeader}>
+            <View style={styles.historyVehicleBadge}>
+              <Package size={14} color={colors.dark} />
+              <Text style={styles.historyVehicleText}>Auto Freight • #AT-78190</Text>
+            </View>
+            <View style={styles.historyStatusPill}>
+              <Check size={11} color={colors.dark} strokeWidth={3} />
+              <Text style={styles.historyStatusText}>DELIVERED</Text>
+            </View>
+          </View>
+
+          <View style={styles.historyRouteBlock}>
+            <View style={styles.historyRouteRow}>
+              <View style={styles.historyDotPickup} />
+              <Text style={styles.historyAddressText} numberOfLines={1}>
+                HSR Layout Sector 2, Bengaluru
+              </Text>
+            </View>
+            <View style={styles.historyRouteConnector} />
+            <View style={styles.historyRouteRow}>
+              <View style={styles.historyDotDrop} />
+              <Text style={styles.historyAddressText} numberOfLines={1}>
+                Bellandur Outer Ring Road, Bengaluru
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.historyFooter}>
+            <View>
+              <Text style={styles.historyFareLabel}>TOTAL PAID</Text>
+              <Text style={styles.historyFareValue}>₹ 240.00</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.invoiceBtn}
+              onPress={() =>
+                Alert.alert(
+                  'Digital Tax Invoice',
+                  'Invoice for #AT-78190 downloaded.\nAmount: ₹ 240.00 (Incl. 18% GST ₹36.61)'
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Download tax invoice"
+            >
+              <FileText size={13} color={colors.dark} />
+              <Text style={styles.invoiceBtnText}>Tax Invoice</Text>
+            </TouchableOpacity>
+          </View>
+        </NeomorphCard>
+      </View>
+    );
+  };
 
   // ==========================================
   // Render: Phase 2 - Booking Sheet
@@ -1567,7 +1776,7 @@ export default function CustomerHomeScreen() {
         style={styles.bookAnotherBtn}
         onPress={() => {
           setCustomerState('explore_quote');
-          setOverviewTab('send_parcel');
+          setNavTab('dispatch');
           setDeliveryStep('driver_assigned');
         }}
       />
@@ -1763,46 +1972,35 @@ export default function CustomerHomeScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {renderTopAppBar()}
 
-      {/* When in Explore Quote: Show the 3 Main Tabs */}
-      {customerState === 'explore_quote' && (
-        <View style={styles.tabBarContainer}>
-          <PillTabs<OverviewTab>
-            tabs={[
-              { key: 'send_parcel', label: 'Send Parcel' },
-              { key: 'saved_places', label: 'Saved Places' },
-              { key: 'wallet_passes', label: 'Wallet' },
-            ]}
-            activeTab={overviewTab}
-            onTabChange={setOverviewTab}
-          />
-        </View>
-      )}
-
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          customerState === 'explore_quote' && overviewTab === 'send_parcel' && styles.scrollContentWithDock,
+          {
+            paddingBottom:
+              customerState === 'explore_quote' && navTab === 'dispatch' ? 180 : 120,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {customerState === 'explore_quote' && (
+        {navTab === 'dispatch' && (
           <>
-            {overviewTab === 'send_parcel' && renderSendParcelTab()}
-            {overviewTab === 'saved_places' && renderSavedPlacesTab()}
-            {overviewTab === 'wallet_passes' && renderWalletPassesTab()}
+            {customerState === 'explore_quote' && renderSendParcelTab()}
+            {customerState === 'booking_sheet' && renderBookingSheet()}
+            {customerState === 'finding_driver' && renderFindingDriver()}
+            {customerState === 'active_tracking' && renderActiveTracking()}
+            {customerState === 'delivery_completed' && renderDeliveryCompleted()}
           </>
         )}
 
-        {customerState === 'booking_sheet' && renderBookingSheet()}
-        {customerState === 'finding_driver' && renderFindingDriver()}
-        {customerState === 'active_tracking' && renderActiveTracking()}
-        {customerState === 'delivery_completed' && renderDeliveryCompleted()}
+        {navTab === 'activity' && renderActivityTab()}
+        {navTab === 'saved_places' && renderSavedPlacesTab()}
+        {navTab === 'wallet' && renderWalletPassesTab()}
       </ScrollView>
 
-      {/* Pinned Bottom Quote Dock */}
-      {customerState === 'explore_quote' && overviewTab === 'send_parcel' && (
-        <View style={[styles.quoteSummaryDock, { paddingBottom: Math.max(insets.bottom, 14) }]}>
-          <NeomorphCard variant="mint" style={styles.quoteSummaryCard}>
+      {/* Floating Quote Summary Dock (Elevated above bottom nav bar) */}
+      {customerState === 'explore_quote' && navTab === 'dispatch' && (
+        <View style={[styles.quoteSummaryDock, { bottom: Math.max(insets.bottom + 68, 76) }]}>
+          <NeomorphCard style={styles.quoteSummaryCard}>
             <View style={styles.quoteSummaryRow}>
               <View style={styles.quoteFareCol}>
                 <Text style={styles.quoteFareLabel}>ESTIMATED FARE</Text>
@@ -1824,6 +2022,21 @@ export default function CustomerHomeScreen() {
             </View>
           </NeomorphCard>
         </View>
+      )}
+
+      {/* Floating Neomorphic Bottom Navigation Bar */}
+      {customerState !== 'booking_sheet' && (
+        <BottomNavigationBar
+          activeTab={navTab}
+          onTabChange={(tab) => {
+            setNavTab(tab);
+          }}
+          onCenterFabPress={() => {
+            setNavTab('dispatch');
+            setCustomerState('explore_quote');
+          }}
+          activeOrderCount={customerState === 'active_tracking' ? 1 : 0}
+        />
       )}
 
       {/* Overlay Modals */}
@@ -1975,6 +2188,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // Service Mode Segmented Control
+  serviceModeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: theme.radius.pill,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  serviceModeTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: theme.radius.pill,
+    gap: 6,
+  },
+  serviceModeTabActive: {
+    backgroundColor: colors.dark,
+    ...theme.shadows.button,
+  },
+  serviceModeLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  serviceModeLabelActive: {
+    color: colors.onDark,
+    fontWeight: '800',
+  },
+
   // Route & Address Card
   packersMoversBanner: {
     flexDirection: 'row',
@@ -2061,7 +2310,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#E8F9EC',
+    backgroundColor: colors.surfaceSubtle,
     borderWidth: 1.5,
     borderColor: colors.primaryDark,
     alignItems: 'center',
@@ -2180,9 +2429,10 @@ const styles = StyleSheet.create({
     ...theme.shadows.card,
   },
   vehicleCardSelected: {
-    borderColor: colors.primaryDark,
-    backgroundColor: '#F8FCF8',
-    ...theme.shadows.glowGreen,
+    borderColor: colors.dark,
+    borderWidth: 2,
+    backgroundColor: colors.surface,
+    ...theme.shadows.card,
   },
   vehicleCardHeader: {
     flexDirection: 'row',
@@ -2251,7 +2501,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.dark,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: theme.radius.pill,
@@ -2259,7 +2509,7 @@ const styles = StyleSheet.create({
   selectedCheckText: {
     fontSize: 9,
     fontWeight: '900',
-    color: colors.onPrimary,
+    color: colors.onDark,
     letterSpacing: 0.5,
   },
 
@@ -2348,8 +2598,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   switchTrackActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.dark,
+    borderColor: colors.dark,
   },
   switchThumb: {
     width: 20,
@@ -2360,7 +2610,7 @@ const styles = StyleSheet.create({
   },
   switchThumbActive: {
     alignSelf: 'flex-end',
-    backgroundColor: colors.dark,
+    backgroundColor: colors.surface,
   },
   addonDivider: {
     height: 1,
@@ -2369,19 +2619,24 @@ const styles = StyleSheet.create({
   },
 
   // Quote Summary Bar
-  // Pinned Quote Summary Dock
+  // Floating Quote Summary Dock
   quoteSummaryDock: {
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderColor: 'rgba(14, 30, 18, 0.07)',
-    paddingHorizontal: spacing.md,
-    paddingTop: 10,
-    ...theme.shadows.floating,
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+    zIndex: 998,
   },
   quoteSummaryCard: {
+    width: '100%',
+    maxWidth: 440,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: theme.radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...theme.shadows.floating,
   },
   quoteSummaryRow: {
     flexDirection: 'row',
@@ -3172,7 +3427,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   paidBadge: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: theme.radius.pill,
@@ -3180,7 +3437,7 @@ const styles = StyleSheet.create({
   paidBadgeText: {
     fontSize: 10,
     fontWeight: '900',
-    color: '#15803D',
+    color: colors.textPrimary,
   },
   invoiceDivider: {
     height: 1,
@@ -3533,5 +3790,149 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     flex: 1,
+  },
+
+  // Activity & History Tab
+  activityHeroCard: {
+    padding: spacing.md,
+    marginTop: spacing.xs,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  activityHeroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  activityIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surfaceSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityHeroTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  activityHeroSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  activityHeroActions: {
+    marginTop: spacing.md,
+    alignItems: 'flex-start',
+  },
+  historyCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  historyCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  historyVehicleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  historyVehicleText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  historyStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceSubtle,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  historyStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.dark,
+    letterSpacing: 0.5,
+  },
+  historyRouteBlock: {
+    paddingVertical: 6,
+    paddingLeft: 4,
+  },
+  historyRouteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  historyDotPickup: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.dark,
+  },
+  historyDotDrop: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
+  },
+  historyRouteConnector: {
+    width: 2,
+    height: 12,
+    backgroundColor: colors.border,
+    marginLeft: 3,
+    marginVertical: 2,
+  },
+  historyAddressText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  historyFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  historyFareLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+  },
+  historyFareValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginTop: 1,
+  },
+  invoiceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.surfaceSubtle,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  invoiceBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.dark,
   },
 });

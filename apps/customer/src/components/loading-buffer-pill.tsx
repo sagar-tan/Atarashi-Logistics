@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(110, 231, 135, 0.5)',
+    borderColor: colors.border,
     marginTop: 2,
   },
   policyBannerContent: {
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(110, 231, 135, 0.4)',
+    borderColor: colors.border,
   },
   freeBadgeText: {
     fontSize: 9,

@@ -374,8 +374,8 @@ export function LocationPickerModal({
     : MAP_HEIGHT_NORMAL;
 
   const isPickup = target === 'pickup';
-  const pinColor = isPickup ? '#2F8544' : '#DC2626';
-  const pinLightColor = isPickup ? '#E8F9EC' : '#FEE2E2';
+  const pinColor = isPickup ? '#0F172A' : '#334155';
+  const pinLightColor = isPickup ? '#F1F5F9' : '#E2E8F0';
 
   return (
     <Modal
@@ -552,8 +552,8 @@ export function LocationPickerModal({
                   <Svg width={SCREEN_WIDTH * 2.4} height={mapViewportHeight * 2.4}>
                     <Defs>
                       <LinearGradient id="mapBg" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <Stop offset="0%" stopColor="#EEF4EE" />
-                        <Stop offset="100%" stopColor="#E4EDE4" />
+                        <Stop offset="0%" stopColor="#F8FAFC" />
+                        <Stop offset="100%" stopColor="#F1F5F9" />
                       </LinearGradient>
                     </Defs>
 
@@ -561,7 +561,7 @@ export function LocationPickerModal({
                     <Rect width="100%" height="100%" fill="url(#mapBg)" />
 
                     {/* Secondary Roads & Street Blocks */}
-                    <G stroke="#D8E5D8" strokeWidth="6" opacity="0.75">
+                    <G stroke="#E2E8F0" strokeWidth="6" opacity="0.8">
                       <Line x1="60" y1="0" x2="60" y2="1000" />
                       <Line x1="160" y1="0" x2="160" y2="1000" />
                       <Line x1="260" y1="0" x2="260" y2="1000" />
@@ -592,15 +592,15 @@ export function LocationPickerModal({
                       strokeWidth="12"
                     />
 
-                    {/* Green Public Parks & Logistics Hub Clusters */}
-                    <Rect x="120" y="220" width="80" height="60" rx="8" fill="#D3EAD3" />
-                    <Rect x="460" y="110" width="100" height="70" rx="8" fill="#D3EAD3" />
-                    <Rect x="300" y="380" width="90" height="65" rx="8" fill="#D3EAD3" />
+                    {/* Logistics Hub Clusters */}
+                    <Rect x="120" y="220" width="80" height="60" rx="8" fill="#E9ECEF" />
+                    <Rect x="460" y="110" width="100" height="70" rx="8" fill="#E9ECEF" />
+                    <Rect x="300" y="380" width="90" height="65" rx="8" fill="#E9ECEF" />
 
                     {/* Hub Marker Dots */}
-                    <Circle cx="400" cy="270" r="6" fill="#6EE787" />
-                    <Circle cx="240" cy="180" r="6" fill="#6EE787" />
-                    <Circle cx="580" cy="350" r="6" fill="#6EE787" />
+                    <Circle cx="400" cy="270" r="6" fill="#94A3B8" />
+                    <Circle cx="240" cy="180" r="6" fill="#94A3B8" />
+                    <Circle cx="580" cy="350" r="6" fill="#94A3B8" />
                   </Svg>
                 </TouchableOpacity>
               </Animated.View>
@@ -614,8 +614,8 @@ export function LocationPickerModal({
                     transform: [{ scale: pulseAnim }],
                     borderColor: pinColor,
                     backgroundColor: isPickup
-                      ? 'rgba(110, 231, 135, 0.22)'
-                      : 'rgba(239, 68, 68, 0.22)',
+                      ? 'rgba(15, 23, 42, 0.12)'
+                      : 'rgba(51, 65, 85, 0.12)',
                   },
                 ]}
               />

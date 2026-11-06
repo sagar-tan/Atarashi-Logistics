@@ -257,14 +257,14 @@ export function SlideToConfirm({
         ]}
       >
         {isConfirmed ? (
-          <Check size={22} color={colors.surface} strokeWidth={3} />
+          <Check size={22} color={colors.onDark} strokeWidth={3} />
         ) : (
           <Animated.View
             style={{
               transform: [{ translateX: arrowPulse }],
             }}
           >
-            <ChevronRight size={22} color={colors.primary} strokeWidth={2.8} />
+            <ChevronRight size={22} color={colors.onDark} strokeWidth={2.8} />
           </Animated.View>
         )}
       </Animated.View>
@@ -275,10 +275,10 @@ export function SlideToConfirm({
 const styles = StyleSheet.create({
   container: {
     height: CONTAINER_HEIGHT,
-    backgroundColor: '#EDF2EE',
+    backgroundColor: colors.surfaceSubtle,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: '#E2E9E3',
+    borderColor: colors.border,
     justifyContent: 'center',
     paddingHorizontal: PADDING,
     overflow: 'hidden',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surfacePressed,
     borderRadius: radius.pill,
   },
   textWrapper: {

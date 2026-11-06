@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   countTextActive: {
-    color: theme.colors.dark,
+    color: theme.colors.onPrimary,
   },
 });
 

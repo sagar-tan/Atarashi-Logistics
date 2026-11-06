@@ -1211,7 +1211,7 @@ export default function DriverHomeScreen() {
                 <NeomorphCard style={styles.codCard}>
                   <View style={styles.codHeader}>
                     <View style={styles.codIconBox}>
-                      <IndianRupee size={16} color="#059669" />
+                      <IndianRupee size={16} color={colors.primaryDark} />
                     </View>
                     <View>
                       <Text style={styles.codTitle}>Cash on Delivery (COD) In Hand</Text>
@@ -1821,10 +1821,10 @@ const styles = StyleSheet.create({
   cargoSpecCard: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.surfaceSubtle,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: colors.border,
   },
   cargoHeaderRow: {
     flexDirection: 'row',
@@ -1847,7 +1847,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: colors.border,
   },
   cargoTagText: {
     fontSize: 10,
@@ -2115,7 +2115,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.surfaceSubtle,
     padding: 10,
     borderRadius: 12,
     marginTop: 12,
@@ -2145,11 +2145,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAF8',
+    backgroundColor: colors.surfaceSubtle,
     padding: 12,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#E2E8E2',
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: 14,
   },
   podLeft: {
@@ -2169,8 +2169,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   podIconCircleDone: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    backgroundColor: colors.primaryDark,
+    borderColor: colors.primaryDark,
   },
   podTitle: {
     fontSize: 12,
@@ -2192,8 +2192,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   podActionBtnDone: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#86EFAC',
+    backgroundColor: colors.primaryDark,
+    borderColor: colors.primaryDark,
   },
   podActionText: {
     fontSize: 11,
@@ -2201,7 +2201,7 @@ const styles = StyleSheet.create({
     color: colors.dark,
   },
   podActionTextDone: {
-    color: '#059669',
+    color: colors.onDark,
   },
   podDualGrid: {
     flexDirection: 'row',
@@ -2220,8 +2220,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   podGridTileActive: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#86EFAC',
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.primaryDark,
   },
   podGridTitle: {
     fontSize: 11,
@@ -2425,8 +2425,8 @@ const styles = StyleSheet.create({
   codCard: {
     padding: 18,
     marginTop: 12,
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.border,
     borderWidth: 1,
   },
   codHeader: {
@@ -2438,28 +2438,28 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   codTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#065F46',
+    color: colors.primaryDark,
   },
   codSub: {
     fontSize: 10,
-    color: '#047857',
+    color: colors.textSecondary,
   },
   codAmount: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#065F46',
+    color: colors.primaryDark,
     marginTop: 10,
   },
   codDivider: {
     height: 1,
-    backgroundColor: '#BBF7D0',
+    backgroundColor: colors.border,
     marginVertical: 12,
   },
 

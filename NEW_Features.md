@@ -687,3 +687,55 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - Upgraded `handleSelectPrediction` to fetch high-precision coordinates directly from Google Places when a place suggestion is clicked, smoothly animating map pan and center pin to the exact GPS point.
 - **Verification**:
   - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors (PASSED)**.
+
+
+## 2026-11-06 15:40 IST
+
+### EcoCharge-Style Floating Bottom Navigation Bar, Luxury Monochrome Theme (White, Grey, Black) & UI De-Cluttering
+- **Request:** "The navbar looks shite, there should be a proper one on the lower side of the screen, and with proper navigation features like there was in atarashi ecocharge app. Besides that for this app let's change the color accent to, white grey and black, instead of greenish. Look up all components and implement the changes... Also the ui seems very cluttered, make it elegant with proper UI and UX principles. And by that I mean every page every layout everything."
+- **Goal:** Replace the legacy top segmented tab switcher with a lower floating navigation bar identical to Atarashi EcoCharge (`CustomTabBar`), completely shift color accents from green to a luxury monochrome palette (pure white `#FFFFFF`, sophisticated slate `#475569`, obsidian `#0F172A`, and pitch black `#000000`), remove cluttered promotional banners, split overwhelming vehicle grids into clean segmented service modes (Express Parcel, Freight Trucks, House Shifting), and ensure flawless visual hierarchy.
+- **Changes:**
+  - **Created EcoCharge Floating Bottom Navigation Bar (`apps/customer/src/components/bottom-navigation-bar.tsx`)**:
+    - Modeled directly after EcoCharge's `CustomTabBar.tsx`.
+    - Floating pill capsule geometry: `position: 'absolute'`, `bottom: Math.max(insets.bottom + 8, 16)`, elevated white surface (`#FFFFFF`), hairline border (`#E2E8F0`), continuous rounded edges (`borderRadius: 28`), and soft ambient drop shadow (`...shadows.floating`).
+    - 4 main navigation tabs:
+      - **Dispatch**: Courier / parcel booking interface (`Package` icon).
+      - **Activity**: Live order tracking cockpit & historical tax invoice records (`Clock` icon with badge counter).
+      - **Places**: Quick-access saved addresses (`MapPin` icon).
+      - **Wallet**: Fast top-ups, transaction ledger, and COD balances (`Wallet` icon).
+    - Center Quick-Action FAB (`+ Send`):
+      - 52px circular obsidian black capsule (`#0F172A`) elevated `-16px` above the tab strip.
+      - Tactile spring micro-compression animation with white `Plus` icon and high-contrast label.
+    - Active indicator: Subtle dark charcoal bottom dot and tinted pill icon container.
+    - Contextual auto-hide: Disappears automatically when the checkout bottom sheet is open, giving full prominence to `SlideToConfirm`.
+  - **Color Accent Transition to Luxury Monochrome (White, Grey, Black)**:
+    - Updated `apps/customer/src/theme/theme.ts` & `apps/driver/src/theme/theme.ts`:
+      - `primary`: `#0F172A` (Obsidian black)
+      - `primaryDark`: `#000000` (Pitch black)
+      - `primaryLight`: `#F1F5F9` (Soft silver pill container)
+      - `background`: `#F8F9FA` (Pristine porcelain canvas)
+      - `surface`: `#FFFFFF` (Pure elevated white)
+      - `surfaceSubtle`: `#F1F3F5` (Recessed neutral grey)
+      - `textPrimary`: `#0F172A`, `textSecondary`: `#475569`, `border`: `#E2E8F0`.
+    - Systematic elimination of all legacy green tokens across customer and driver apps:
+      - `apps/customer/src/components/ui/neomorph-card.tsx`
+      - `apps/driver/src/components/ui/neomorph-card.tsx`
+      - `apps/customer/src/components/slide-to-confirm.tsx`
+      - `apps/customer/src/components/multi-stop-route-card.tsx`
+      - `apps/customer/src/components/loading-buffer-pill.tsx`
+      - `apps/customer/src/components/location-picker-modal.tsx` (updated SVG map tiles to crisp architectural silver-grey gradient)
+      - `apps/customer/src/components/b2b-gstin-modal.tsx`
+      - `apps/customer/src/app/index.tsx` (pickup pin backgrounds, tax invoice paid badges, vehicle cards)
+      - `apps/driver/src/app/index.tsx` (COD cash-in-hand cards, cargo specification tags, proof of delivery badges)
+      - `apps/customer/src/app/_layout.tsx` & `apps/driver/src/app/_layout.tsx` background reset to `#F8F9FA`.
+  - **UI/UX De-Cluttering & Cognitive Simplification**:
+    - **Service Switcher Segmented Control**: Replaced a giant 4-card vehicle wall and promotional banner with a sleek 3-way service selector:
+      - `[ 🛵 Express Parcel ]` | `[ 🚚 Freight Trucks ]` | `[ 🏠 House Shifting ]`.
+    - Focused vehicle options: Shows only 2 contextually relevant vehicles at any given time (e.g. Bike + Auto for Express; Car Courier + Pickup Truck for Freight) rather than crowding the viewport.
+    - Integrated House Shifting flow directly into `PackersMoversModal`.
+    - Implemented dedicated screens for `Activity`, `Places`, and `Wallet` within `apps/customer/src/app/index.tsx`.
+    - Pinned `quoteSummaryDock` cleanly above the floating bottom navigation bar.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors (PASSED)**.
+  - `npm test`: **30 / 30 tests passed**.
+  - Verified live on Pixel 9 emulator (`emulator-5554`) via ADB screenshots across home screen, bottom navigation tabs, and booking sheet.

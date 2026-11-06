@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   statusBadgeSuccess: {
     backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#C6F6D5',
+    borderColor: colors.border,
   },
   statusBadgePending: {
     backgroundColor: '#FEF3C7',

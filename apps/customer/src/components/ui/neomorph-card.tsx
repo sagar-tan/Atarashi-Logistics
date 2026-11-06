@@ -90,10 +90,10 @@ const variantStyles = StyleSheet.create({
     borderWidth: 1,
   },
   mint: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: 'rgba(110, 231, 135, 0.4)',
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderColor: theme.colors.border,
     borderWidth: 1,
-    ...theme.shadows.glowGreen,
+    ...theme.shadows.card,
   },
 });
 

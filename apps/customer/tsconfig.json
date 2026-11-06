@@ -22,6 +22,7 @@
     "src/components/multi-stop-route-card.tsx",
     "src/components/loading-buffer-pill.tsx",
     "src/components/packers-movers-modal.tsx",
+    "src/components/bottom-navigation-bar.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]

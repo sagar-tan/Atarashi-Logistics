@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(110, 231, 135, 0.4)',
+    borderColor: colors.border,
   },
   reverseButtonText: {
     fontSize: 12,
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(110, 231, 135, 0.5)',
+    borderColor: colors.border,
   },
   addStopTextContainer: {
     flex: 1,

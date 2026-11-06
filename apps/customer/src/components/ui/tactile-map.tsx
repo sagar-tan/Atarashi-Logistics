@@ -345,11 +345,11 @@ export function TactileMap({
         />
 
         {/* Pickup Pin Marker (Origin) */}
-        <Circle cx="80" cy="160" r="11" fill="#111813" />
-        <Circle cx="80" cy="160" r="5" fill="#6EE787" />
+        <Circle cx="80" cy="160" r="11" fill="#0F172A" />
+        <Circle cx="80" cy="160" r="5" fill="#FFFFFF" />
 
         {/* Dropoff Pin Marker (Destination) */}
-        <Circle cx="320" cy="65" r="11" fill="#10B981" />
+        <Circle cx="320" cy="65" r="11" fill="#475569" />
         <Circle cx="320" cy="65" r="4.5" fill="#FFFFFF" />
       </Svg>
 
