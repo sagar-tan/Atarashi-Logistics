@@ -1,4 +1,4 @@
-import type { VehicleType } from '@atarashi/domain';
+import type { Coordinates, VehicleType } from '@atarashi/domain';
 import { Image } from 'expo-image';
 import {
   AlertCircle,
@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Compass,
   CreditCard,
+  Crosshair,
   FileText,
   Home,
   Info,
@@ -55,8 +57,10 @@ import { Input } from '@/components/ui/input';
 import { NeomorphCard } from '@/components/ui/neomorph-card';
 import { PillButton } from '@/components/ui/pill-button';
 import { PillTabs } from '@/components/ui/pill-tabs';
+import { LocationPickerModal } from '@/components/location-picker-modal';
 import { TactileCard } from '@/components/ui/tactile-card';
 import { TactileMap } from '@/components/ui/tactile-map';
+import { api } from '@/lib/api';
 import { theme } from '@/theme/theme';
 
 const { colors, spacing, sizes } = theme;
@@ -169,10 +173,42 @@ export default function CustomerHomeScreen() {
 
   // Booking Configuration State
   const [pickupAddress, setPickupAddress] = useState('Indiranagar 100ft Road, Bengaluru');
+  const [pickupCoords, setPickupCoords] = useState<Coordinates>({ latitude: 12.9716, longitude: 77.5946 });
   const [dropoffAddress, setDropoffAddress] = useState('Koramangala 4th Block, Bengaluru');
+  const [dropoffCoords, setDropoffCoords] = useState<Coordinates>({ latitude: 12.9352, longitude: 77.6245 });
   const [distanceKm, setDistanceKm] = useState(4.8);
+  const [travelMins, setTravelMins] = useState(14);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('bike');
   const [selectedCategory, setSelectedCategory] = useState('Electronics & Gadgets');
+
+  // Interactive Location Pinpointing Modal State
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<'pickup' | 'dropoff'>('dropoff');
+
+  // Backend Booking State
+  const [activeBookingId, setActiveBookingId] = useState('AT-84920');
+  const [activeOtp, setActiveOtp] = useState('5821');
+  const [activePin, setActivePin] = useState('9412');
+
+  // Live Pricing Quote Integration with Render Backend
+  useEffect(() => {
+    let active = true;
+    async function fetchQuote() {
+      try {
+        const quote = await api.getPricingQuote(pickupCoords, dropoffCoords, selectedVehicle);
+        if (active) {
+          setDistanceKm(quote.distance_km);
+          setTravelMins(quote.duration_mins);
+        }
+      } catch (err) {
+        console.warn('Pricing quote fetch error:', err);
+      }
+    }
+    fetchQuote();
+    return () => {
+      active = false;
+    };
+  }, [pickupCoords, dropoffCoords, selectedVehicle]);
 
   // Porter Add-ons State
   const [helperAddon, setHelperAddon] = useState(false);
@@ -270,9 +306,13 @@ export default function CustomerHomeScreen() {
 
   // Address swap handler
   const handleSwapAddresses = () => {
-    const temp = pickupAddress;
+    const tempAddr = pickupAddress;
     setPickupAddress(dropoffAddress);
-    setDropoffAddress(temp);
+    setDropoffAddress(tempAddr);
+
+    const tempCoords = pickupCoords;
+    setPickupCoords(dropoffCoords);
+    setDropoffCoords(tempCoords);
   };
 
   // Next step simulation in active tracking
@@ -302,6 +342,33 @@ export default function CustomerHomeScreen() {
     setSelectedCompliments((prev) =>
       prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
     );
+  };
+
+  // Create booking via live Render API
+  const handleBookDelivery = async () => {
+    setCustomerState('finding_driver');
+    try {
+      const res = await api.createBooking({
+        customer_id: 'cust_blr_01',
+        vehicle_type: selectedVehicle,
+        parcel_size: 'small',
+        weight_kg: 2.5,
+        pickup_address: pickupAddress,
+        pickup_coordinates: pickupCoords,
+        dropoff_address: dropoffAddress,
+        dropoff_coordinates: dropoffCoords,
+        recipient_name: receiverName,
+        recipient_phone: receiverPhone,
+        delivery_notes: specialNote,
+        payment_method: paymentMethod === 'cod' ? 'cash' : paymentMethod,
+        fare_paise: finalTotalPaise,
+      });
+      if (res.id) setActiveBookingId(res.id);
+      if (res.pickup_otp) setActiveOtp(res.pickup_otp);
+      if (res.delivery_pin) setActivePin(res.delivery_pin);
+    } catch (err) {
+      console.warn('Booking create fallback to simulation:', err);
+    }
   };
 
   // ==========================================
@@ -356,34 +423,64 @@ export default function CustomerHomeScreen() {
         </View>
 
         {/* Pickup Row */}
-        <View style={styles.addressRow}>
+        <TouchableOpacity
+          style={styles.addressRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setPickerTarget('pickup');
+            setShowLocationPicker(true);
+          }}
+        >
           <View style={styles.pinCirclePickup}>
             <View style={styles.pinDotPickup} />
           </View>
           <View style={styles.addressInfo}>
-            <Text style={styles.addressLabel}>PICKUP POINT</Text>
+            <View style={styles.addressLabelRow}>
+              <Text style={styles.addressLabel}>PICKUP POINT</Text>
+              <View style={styles.pinpointBadge}>
+                <Crosshair size={10} color={colors.primaryDark} />
+                <Text style={styles.pinpointBadgeText}>Pinpoint</Text>
+              </View>
+            </View>
             <Text style={styles.addressValue} numberOfLines={1}>
               {pickupAddress}
             </Text>
-            <Text style={styles.addressSub}>Near Metro Pillar 84, Indiranagar</Text>
+            <Text style={styles.addressSub}>
+              {pickupCoords.latitude.toFixed(4)}° N, {pickupCoords.longitude.toFixed(4)}° E
+            </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.routeDividerLine} />
 
         {/* Dropoff Row */}
-        <View style={styles.addressRow}>
+        <TouchableOpacity
+          style={styles.addressRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setPickerTarget('dropoff');
+            setShowLocationPicker(true);
+          }}
+        >
           <View style={styles.pinCircleDropoff}>
             <View style={styles.pinDotDropoff} />
           </View>
           <View style={styles.addressInfo}>
-            <Text style={styles.addressLabel}>DELIVERY DESTINATION</Text>
+            <View style={styles.addressLabelRow}>
+              <Text style={styles.addressLabel}>DELIVERY DESTINATION</Text>
+              <View style={styles.pinpointBadge}>
+                <Crosshair size={10} color={colors.primaryDark} />
+                <Text style={styles.pinpointBadgeText}>Pinpoint</Text>
+              </View>
+            </View>
             <Text style={styles.addressValue} numberOfLines={1}>
               {dropoffAddress}
             </Text>
-            <Text style={styles.addressSub}>80ft Road, Sony World Signal, Koramangala</Text>
+            <Text style={styles.addressSub}>
+              {dropoffCoords.latitude.toFixed(4)}° N, {dropoffCoords.longitude.toFixed(4)}° E
+            </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.routeMetricsRow}>
           <View style={styles.metricPill}>
@@ -392,7 +489,7 @@ export default function CustomerHomeScreen() {
           </View>
           <View style={styles.metricPill}>
             <Clock size={12} color={colors.primaryDark} />
-            <Text style={styles.metricPillText}>~14 mins travel time</Text>
+            <Text style={styles.metricPillText}>~{travelMins} mins travel time</Text>
           </View>
         </View>
       </NeomorphCard>
@@ -903,7 +1000,7 @@ export default function CustomerHomeScreen() {
         size="lg"
         icon={<ArrowRight size={19} color={colors.onDark} />}
         style={styles.bookDeliveryBtn}
-        onPress={() => setCustomerState('finding_driver')}
+        onPress={handleBookDelivery}
       />
     </View>
   );
@@ -982,11 +1079,13 @@ export default function CustomerHomeScreen() {
     <View style={styles.phaseContent}>
       {/* Live Vector Map */}
       <TactileMap
-        pickupLabel="Indiranagar 100ft Rd"
-        dropoffLabel="Koramangala 4th Block"
+        pickupLabel={pickupAddress.split(',')[0]}
+        dropoffLabel={dropoffAddress.split(',')[0]}
+        pickupCoords={pickupCoords}
+        dropoffCoords={dropoffCoords}
         distanceKm={distanceKm}
         durationMins={
-          deliveryStep === 'driver_assigned' ? 4 : deliveryStep === 'in_transit' ? 8 : 1
+          deliveryStep === 'driver_assigned' ? Math.round(travelMins * 0.4) : deliveryStep === 'in_transit' ? travelMins : 1
         }
         statusText={
           deliveryStep === 'driver_assigned'
@@ -1054,7 +1153,7 @@ export default function CustomerHomeScreen() {
 
         <View style={styles.otpDisplayContainer}>
           <Text style={styles.otpDigitLabel}>PICKUP OTP</Text>
-          <Text style={styles.otpDigitValue}>{pickupOtp}</Text>
+          <Text style={styles.otpDigitValue}>{activeOtp}</Text>
         </View>
 
         <View style={styles.otpWarningNotice}>
@@ -1070,7 +1169,7 @@ export default function CustomerHomeScreen() {
         <NeomorphCard style={styles.deliveryPinCard}>
           <View style={styles.pinHeader}>
             <Text style={styles.pinLabel}>DOORSTEP DELIVERY PIN</Text>
-            <Text style={styles.pinValue}>{deliveryPin}</Text>
+            <Text style={styles.pinValue}>{activePin}</Text>
           </View>
           <Text style={styles.pinSub}>
             Share this PIN with receiver ({receiverName}) to confirm delivery handover.
@@ -1156,7 +1255,7 @@ export default function CustomerHomeScreen() {
 
             <View style={styles.stepLabelItem}>
               <Text style={styles.stepLabelTitle}>Package Picked Up</Text>
-              <Text style={styles.stepLabelSub}>OTP {pickupOtp} verified by courier</Text>
+              <Text style={styles.stepLabelSub}>OTP {activeOtp} verified by courier</Text>
             </View>
 
             <View style={styles.stepLabelItem}>
@@ -1241,7 +1340,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.invoiceHeader}>
           <View>
             <Text style={styles.invoiceTitle}>TAX INVOICE RECEIPT</Text>
-            <Text style={styles.invoiceBookingId}>Booking ID: AT-84920</Text>
+            <Text style={styles.invoiceBookingId}>Booking ID: {activeBookingId}</Text>
           </View>
           <View style={styles.paidBadge}>
             <Text style={styles.paidBadgeText}>PAID</Text>
@@ -1649,6 +1748,24 @@ export default function CustomerHomeScreen() {
       {renderChatModal()}
       {renderPodModal()}
       {renderCancelModal()}
+
+      {/* Interactive Location Pinpointing Modal */}
+      <LocationPickerModal
+        visible={showLocationPicker}
+        target={pickerTarget}
+        initialAddress={pickerTarget === 'dropoff' ? dropoffAddress : pickupAddress}
+        initialCoords={pickerTarget === 'dropoff' ? dropoffCoords : pickupCoords}
+        onClose={() => setShowLocationPicker(false)}
+        onConfirm={(addr, coords) => {
+          if (pickerTarget === 'dropoff') {
+            setDropoffAddress(addr);
+            setDropoffCoords(coords);
+          } else {
+            setPickupAddress(addr);
+            setPickupCoords(coords);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -1824,6 +1941,27 @@ const styles = StyleSheet.create({
   },
   addressInfo: {
     flex: 1,
+  },
+  addressLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  pinpointBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: theme.radius.pill,
+  },
+  pinpointBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.primaryDark,
+    letterSpacing: 0.3,
   },
   addressLabel: {
     fontSize: 10,
