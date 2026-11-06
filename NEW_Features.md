@@ -509,3 +509,59 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - Tested on Android Studio Pixel 9 emulator:
     - Screen captures: `cust_pinpoint_check.png`, `cust_pinpoint_opened.png`, `cust_pinpoint_moved.png`, `cust_pinpoint_confirmed.png`.
     - Confirmed pin movement, reverse-geocoded address display, and seamless confirmation.
+
+
+---
+
+## 2026-11-06 12:06 IST
+
+### Physical Phone ADB Analysis & Porter App (`com.theporter.android.customerapp`) Full Feature Breakdown
+- **Request:** "So you know I have connected my phone via ADB. First off try to check if you can get screenshots from there. And then I have installed the app named Porter... I want you to basically screenshot the whole app. Like, see what features are there."
+- **Goal:** Systematically explore, screenshot, and dissect all core services, workflows, and UI patterns across the live Porter app on the user's physical Samsung phone (`RZGL304MCMB`, SM-S931B) to establish a comprehensive architectural and feature benchmark for Atarashi Logistics.
+- **Actions & Screens Captured**:
+  1. **Device Identification & App Launch**:
+     - ADB identified device: `RZGL304MCMB` (Samsung SM-S931B, Android 16 / One UI).
+     - Package launched: `com.theporter.android.customerapp/.RootActivity`.
+  2. **Location Service Boundary Check (`porter_1.png` / `porter_2.png` / `porter_on_home_now.png`)**:
+     - When device GPS reports outside coverage (e.g. Haryana), displays clean empty state: *"We are not there yet! We currently do not serve this location."* with prominent "Change Location" CTA.
+  3. **Address Autocomplete & Search (`porter_search.png`, `porter_autocomplete.png`)**:
+     - Fast autocomplete with categorized results (Suburbs, Police stations, Metro stations, Clubs).
+  4. **Pickup Location Pinpoint & Sender Details (`porter_blr_loaded.png`, `porter_blr_loaded_2.png`)**:
+     - Google Map with fixed center pin and speech bubble (*"Your goods will be picked from here"*).
+     - Contact dot/shadow under the pin showing exact street coordinate contact.
+     - Bottom sheet with prefilled sender details, contact book selector, and address tags (`Home`, `Shop`, `Other`).
+  5. **Core Service Hierarchy on Home Screen (`porter_live_now.png`)**:
+     - **Trucks**: 3-wheelers, Tata Ace, 8ft/9ft pickups for heavy cargo.
+     - **2 Wheeler**: Fast motorcycle & scooter courier delivery under 20 kg.
+     - **Packers & Movers**: Full home/office shifting with labor & packing.
+     - Persistent bottom tabs: `Home`, `Orders`, `Coins`, `Payments`, `Account`.
+  6. **Map Pinpoint Interactive Experience (`porter_map_pinpoint_view.png`)**:
+     - Center-anchored pin with real-time reverse-geocoded road name card (`Hasanpur Bamnikhera Rd`).
+     - Map controls: Recenter GPS target, Fullscreen map view.
+  7. **Orders Hub (`porter_orders_tab.png`)**:
+     - Clean box illustration empty state with 2-year history policy and support links.
+  8. **Loyalty & Rewards Program (`porter_coins_tab.png`, `porter_coins_loaded.png`)**:
+     - Porter Coins balance card (Earn 2 coins for every ₹100 spent).
+     - Conversion flow: Directly transfer coins into Porter Credits wallet balance or buy gift cards (Amazon, PhonePe).
+  9. **Payments & Wallet Architecture (`porter_payments_tab.png`, `porter_add_money_sheet.png`, `porter_payment_methods_sheet.png`)**:
+     - Dedicated Porter Credits wallet with 1-tap "Add Money" bottom sheet.
+     - Denomination quick chips: `₹500`, `₹1000`, `₹2000`.
+     - Multi-rail payment options: UPI (GPay, PhonePe), Cards (Visa, Mastercard, RuPay), and Cash after delivery.
+  10. **Account & Business GST Management (`porter_account_tab.png`, `porter_gstin_screen.png`, `porter_gstin_input_sheet.png`)**:
+      - Profile card with verified badge and email.
+      - Saved Addresses management.
+      - Dedicated **Business Details / GSTIN** management enabling B2B clients to enter GSTIN for input tax credit invoices.
+      - Porter Enterprise business solutions tier.
+  11. **Packers & Movers Multi-Step Relocation Flow (`porter_packers_movers.png`, `porter_intracity_shifting.png`, `porter_house_add_items.png`, `porter_sofa_expanded.png`, `porter_item_added.png`, `porter_house_schedule_step.png`, `porter_house_time_slots.png`, `porter_house_review_screen.png`, `porter_fare_breakdown_sheet.png`)**:
+      - 3-step linear flow: `Moving details` -> `Add items` -> `Schedule`.
+      - Building accessibility tags: `Lift available`, `No lift`, `Ground floor`.
+      - Rich item catalog with category tabs (`Hall`, `Bedroom`, `Kitchen`, `Others`, `Mandir`) and expandable counters.
+      - Scheduled date picker and time slots (Morning, Afternoon, Evening hourly slots).
+      - Packing tier selection (`SUPERIOR Multi-layer packing` vs `No packing`).
+      - Sliding action button: `>>> Slide to confirm` to prevent accidental dispatch.
+  12. **2-Wheeler Parcel Courier Flow (`porter_2wheeler_screen.png`, `porter_bike_drop_confirmed.png`, `porter_booking_flow_screen.png`, `porter_vehicles_scrolled.png`, `porter_package_details.png`, `porter_review_booking_scrolled.png`, `porter_goods_type_sheet.png`, `porter_goods_confirmed.png`)**:
+      - Route configuration with **`+ Add Stop`** for multi-destination drop-offs and route reverser `⇅`.
+      - Vehicle tier list with payload capacity, delivery box dimensions (`40 CM`), ETAs, and base pricing.
+      - Free 25 mins loading/unloading buffer policy with ₹2/min overage rate.
+      - Restricted goods warning and categorized goods selector (`Electronics`, `FMCG`, `Furnitures`, etc.).
+      - Transparent fare breakdown card with coupon savings and integer rupee rounding.
