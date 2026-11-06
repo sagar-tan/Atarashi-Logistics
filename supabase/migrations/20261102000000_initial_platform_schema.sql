@@ -58,7 +58,7 @@ create table public.driver_status (
   driver_id uuid primary key references public.profiles(id) on delete cascade,
   is_online boolean not null default false,
   kyc_status text not null default 'pending' check (kyc_status in ('pending', 'verified', 'failed')),
-  current_location extensions.geography(point, 4326),
+  current_location geography(point, 4326),
   location_updated_at timestamptz,
   updated_at timestamptz not null default now()
 );
@@ -81,11 +81,11 @@ create table public.bookings (
   parcel_size public.parcel_size not null,
   weight_kg numeric(7,2) not null check (weight_kg > 0),
   pickup_address text not null,
-  pickup_location extensions.geography(point, 4326) not null,
+  pickup_location geography(point, 4326) not null,
   pickup_contact_name text not null,
   pickup_contact_phone text not null,
   dropoff_address text not null,
-  dropoff_location extensions.geography(point, 4326) not null,
+  dropoff_location geography(point, 4326) not null,
   dropoff_contact_name text not null,
   dropoff_contact_phone text not null,
   distance_meters integer not null check (distance_meters > 0),
@@ -150,6 +150,7 @@ create policy "driver_status_select_owner_or_assigned_customer" on public.driver
   )
 );
 create policy "pricing_select_authenticated" on public.vehicle_pricing for select to authenticated using (true);
+create policy "pricing_select_anon" on public.vehicle_pricing for select to anon using (true);
 create policy "bookings_select_customer_or_driver" on public.bookings for select to authenticated using ((select auth.uid()) = customer_id or (select auth.uid()) = driver_id);
 create policy "booking_events_select_booking_party" on public.booking_events for select to authenticated using (
   exists (select 1 from public.bookings b where b.id = booking_id and ((select auth.uid()) = b.customer_id or (select auth.uid()) = b.driver_id))
@@ -160,3 +161,4 @@ grant select on public.profiles to authenticated;
 grant update (full_name, email) on public.profiles to authenticated;
 grant select on public.user_roles, public.vehicles, public.driver_status, public.vehicle_pricing,
   public.bookings, public.booking_events, public.wallet_ledger to authenticated;
+grant select on public.vehicle_pricing to anon;

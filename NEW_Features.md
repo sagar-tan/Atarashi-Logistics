@@ -815,3 +815,98 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - `screen_policy_modal.png`: Verified Carriage & Buffer Policy modal sheet.
     - `screen_stage3_booking.png`: Verified Stage 3 booking details and `SlideToConfirm`.
     - `screen_back_verified.png` & `screen_back_to_stage1.png`: Verified seamless bidirectional navigation between all 3 stages.
+
+
+## 2026-11-06 18:49 IST
+
+### Render Service Deployment & Supabase Project Verification Audit
+- **Request:** "service live on render and supabase connecteD?"
+- **Goal:** Verify live deployment status on Render, inspect real API endpoints, discover the Atarashi Logistics Supabase project across connected accounts, audit environment variables, and inspect database tables.
+- **Changes & Findings:**
+  - **Render Deployment Status (`atarashi-logistics-api`)**:
+    - Service ID: `srv-dbmm5lutlv9c73bdqtdg`
+    - Live URL: `https://atarashi-logistics-api.onrender.com`
+    - Health Check: `GET /health` verified `200 OK` (`status: ok`, `service: atarashi-api`).
+    - API Metadata: `GET /v1` verified `200 OK` (`version: 0.1.0`).
+    - Pricing Endpoint: `POST /v1/pricing/quote` tested live (`distance_km: 5.18`, `duration_mins: 13`, `fare_paise: 9716`, `vehicle_type: bike`).
+    - Bookings Endpoint: `POST /v1/bookings` tested live (successfully created real booking `id: 11287052-7d50-46eb-87ed-e2a3eb95b725` in integer paise).
+    - Deploy: Pushed commit `79f06ad` deployed live (`dep-dbmt5bei0phs73cpcvmg`, finished at `13:15:45Z`).
+  - **Supabase Account Discovery**:
+    - Discovered project in Company Account (`SUPABASE_COMPANY_ATARASHIEV`):
+      - Project Ref: `nbqliwsohowolmyooovs`
+      - Project Name: **Atarashi Logistics**
+      - Region: `ap-south-1` (Mumbai, India)
+      - Status: `ACTIVE_HEALTHY`
+  - **App & Render Wiring**:
+    - `apps/customer/.env` and `apps/driver/.env` configured with `EXPO_PUBLIC_API_BASE_URL=https://atarashi-logistics-api.onrender.com` and `EXPO_PUBLIC_SUPABASE_URL=https://nbqliwsohowolmyooovs.supabase.co`.
+    - Render backend configured with `SUPABASE_URL=https://nbqliwsohowolmyooovs.supabase.co` and `SUPABASE_SECRET_KEY`.
+  - **Database Schema Audit**:
+    - Database contains legacy tables (`drivers`, `users`, `driver_kyc`, `vehicle_pricing`, `promo_codes`, `advertisements`, `bookings`, `wallet_transactions`, etc.).
+    - Repo contains clean, strict migration [`supabase/migrations/20261102000000_initial_platform_schema.sql`](supabase/migrations/20261102000000_initial_platform_schema.sql) with integer PAISE and zero promotional clutter.
+
+
+---
+
+## 2026-11-06 18:54 IST
+
+### Customer Mobile App UX Audit & Official Porter Benchmark Comparison
+- **Request:** "i want you to audit the current Customer app UX and Compare its UX and features with actual Porter app, i believe we clicked a lot fo screenshots from the actual app..."
+- **Goal:** Perform an in-depth UX audit and comparative feature analysis between the Atarashi Customer App (`com.atarashi.customer`) and the official Porter Android App (`com.theporter.android.customerapp`), backed by real physical Samsung device screenshots and live emulator captures across all 12 core logistics user journeys.
+- **Changes & Deliverables:**
+  - Located and curated over 25 verified binary screenshots from the live Porter app on the user's physical Samsung phone (`RZGL304MCMB`, SM-S931B) and the redesigned Atarashi customer app running on the emulator.
+  - Copied key comparison screenshots to the artifact workspace directory for side-by-side rendering:
+    - Landing & Discovery (`porter_live_now.png` vs `screen_stage1_clean2.png`)
+    - Address Autocomplete & Search (`porter_search.png` vs `screen_search_typed.png`)
+    - Center-Pinned Map Pinpointing (`porter_map_pinpoint_view.png` vs `screen_pinpoint_opened.png`)
+    - Vehicle Fleet Selection (`porter_2wheeler_screen.png`, `porter_vehicle_select.png` vs `screen_stage2_vehicles.png`)
+    - Add-Ons & Buffer Policies (`porter_goods_type_sheet.png` vs `screen_policy_modal.png`)
+    - Review Booking & Slide-to-Confirm (`porter_review_booking_scrolled.png` vs `screen_stage3_booking.png`)
+    - Packers & Movers 3-Step Flow (`porter_intracity_shifting.png`, `porter_house_add_items.png`, `porter_house_time_slots.png` vs `cust_packers_open.png`, `cust_packers_step2.png`, `cust_packers_step3.png`)
+    - Courier Radar Broadcast (`cust_finding_driver.png`)
+    - Active Courier Tracking & Dual PIN Security (`cust_active_tracking.png`, `cust_sim_in_transit.png`)
+    - Delivery Handover, Tax Invoice & Rating (`cust_delivered.png`)
+    - In-App Prepaid Wallet (`porter_payments_tab.png` vs `screen_wallet.png`)
+    - B2B GSTIN Invoicing (`porter_gstin_screen.png` vs `cust_gstin_modal.png`)
+    - Orders Activity & Saved Places (`porter_orders_tab.png`, `porter_account_tab.png` vs `screen_activity.png`, `screen_places.png`)
+  - Created comprehensive audit artifact: `customer_app_porter_ux_audit.md` detailing:
+    - Flow-by-flow side-by-side comparisons with visual carousels and UX evaluation matrices.
+    - 28-point feature parity matrix (evaluating full parity across routing, fleet, shifting, policies, dispatch, and tax compliance).
+    - UX architecture audit highlighting Atarashi's 3-stage progressive disclosure, zero alpha-compositing flicker tactile spring physics, dual Pickup OTP (`5821`) + Delivery PIN (`9412`) custody security, and strict integer PAISE accounting.
+    - High-impact strategic opportunities (contact book picker, saved route pairs, masked call routing, TSP multi-stop sequence optimization).
+
+
+## 2026-11-06 18:57 IST
+
+### Supabase Legacy Database Purge, Platform Schema Migration & Direct Client Verification
+- **Request:** "yes" (to reset existing database tables in `nbqliwsohowolmyooovs` and apply `20261102000000_initial_platform_schema.sql`) and "make sure the frontend is connected via that only."
+- **Goal:** Purge all legacy promotional, advertisement, and unstructured tables from Supabase project `nbqliwsohowolmyooovs`, apply the official PostgreSQL 17 + PostGIS migration with strict integer PAISE currency invariants, insert clean seed pricing rates, and verify both mobile frontends and live Render API are exclusively communicating through these live endpoints.
+- **Changes & Execution:**
+  - **Purged Legacy Database Artifacts**:
+    - Dropped tables: `advertisements`, `promo_codes`, `notifications`, `support_messages`, `booking_status_history`, `driver_locations_log`, `wallet_transactions`, `driver_kyc`, `admins`, `drivers`, `users`.
+    - Dropped legacy enums: `ad_audience`, `promo_status`, `discount_type`, `admin_status`, etc.
+  - **Executed Platform Migration (`supabase/migrations/20261102000000_initial_platform_schema.sql`)**:
+    - Successfully created core schema:
+      - `public.profiles` (linked to `auth.users`)
+      - `public.user_roles`
+      - `public.vehicles`
+      - `public.driver_status` (with PostGIS `geography(point, 4326)` spatial GIST index)
+      - `public.vehicle_pricing` (with integer `price_per_km_paise`, `minimum_fare_paise`, and `driver_commission_basis_points`)
+      - `public.bookings` (with spatial pickup/dropoff points, integer paise fares, and lifecycle statuses)
+      - `public.booking_events`
+      - `public.wallet_ledger`
+    - Enabled Row-Level Security (RLS) on all 8 tables and granted appropriate select/update permissions.
+    - Added public anonymous read policy (`pricing_select_anon`) for `vehicle_pricing` so client mobile apps can query rates before user sign-in.
+  - **Seeded Core Pricing Invariants (Integer PAISE)**:
+    - `bike`: ₹35 base fare (`3500 paise`), ₹12/km (`1200 paise`), 20% commission (`2000 bps`)
+    - `auto`: ₹50 base fare (`5000 paise`), ₹18/km (`1800 paise`), 20% commission (`2000 bps`)
+    - `car`: ₹80 base fare (`8000 paise`), ₹25/km (`2500 paise`), 20% commission (`2000 bps`)
+    - `pickup`: ₹150 base fare (`15000 paise`), ₹35/km (`3500 paise`), 20% commission (`2000 bps`)
+  - **Verified End-to-End Client Connectivity**:
+    - Query from anonymous client via publishable key returned all 4 vehicle tiers from Supabase in integer PAISE.
+    - `apps/customer/.env` and `apps/driver/.env` verified with:
+      - `EXPO_PUBLIC_API_BASE_URL=https://atarashi-logistics-api.onrender.com`
+      - `EXPO_PUBLIC_SUPABASE_URL=https://nbqliwsohowolmyooovs.supabase.co`
+    - Render backend verified connected with `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
+- **Verification**:
+  - `npm run typecheck`: Passed with **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
+  - `npm test`: **30 / 30 tests passed**.
