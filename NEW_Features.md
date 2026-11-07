@@ -1106,3 +1106,28 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - Updated Section 2 to split out autonomous development loops on emulator (`emulator-5554`) from on-demand physical USB device installation (`adb -s <device_id> install -r <apk>`) when requested by the user.
   - **`CLAUDE.md`**:
     - Added **Emulator vs Device Target Protocol** under *Conventions and rules*.
+
+---
+
+## 2026-11-07 17:18 IST
+
+### Bottom Navigation Bar Active Indicator Circle Clipping Fix & Phone Re-Installation
+- **Request:** "the selected visual in navbar, converts into a grey box rather than the planned circle, when switched to each other, look up in the code what's the issue. and only if needed waste time screenshottingthe phone ... ofc yes, but just install it. And give me a prompt plan to initialize the authentication system and test the authentication and give me live credentials to test the production level setup, We are not doing anything mock, treat everything as directly working with production., and tell me if there are nay manual steps i need to perform to ensure such."
+- **Goal:**
+  1. Fix the active tab indicator in the bottom navigation bar so switching between tabs maintains a clean circle around the icon instead of degrading into an unclipped square grey box on Android.
+  2. Re-compile the standalone production release APK and deploy directly to the physical Samsung phone (`RZGL304MCMB`).
+  3. Formulate an end-to-end, zero-mock production authentication plan with live Supabase credentials and exact manual setup steps.
+- **Root Cause Identified**:
+  - In `apps/customer/src/components/bottom-navigation-bar.tsx`, `iconCircleActive` only specified `{ backgroundColor: colors.surfaceSubtle }` without re-specifying `borderRadius` and without `overflow: 'hidden'`.
+  - When switching tabs dynamically in React Native on Android (New Architecture), updating the background color on a view that previously had `backgroundColor: 'transparent'` caused Android to instantiate an unclipped `ColorDrawable` quad (a 38x38 square box).
+- **Changes Applied**:
+  - **`apps/customer/src/components/bottom-navigation-bar.tsx`**:
+    - Updated `iconCircle`: set `width: 40, height: 40`, `borderRadius: 9999`, and `overflow: 'hidden'`.
+    - Updated `iconCircleActive`: added explicit `borderRadius: 9999` and `overflow: 'hidden'` alongside `backgroundColor: colors.surfaceSubtle`.
+  - **Standalone Release Build & Phone Deployment**:
+    - Executed `assembleRelease` in `apps/customer/android` (cached build finished in 3m 6s).
+    - Installed updated release APK directly to `RZGL304MCMB` via `adb install -r .../app-release.apk` (`Success`).
+    - Restarted app on device (`com.atarashi.customer/.MainActivity`).
+- **Verification**:
+  - `npm run typecheck`: Passed with **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
+
