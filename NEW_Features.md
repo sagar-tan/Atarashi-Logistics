@@ -1014,3 +1014,23 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - Configured Task Scheduler interactive task (`LaunchPixel9`) with `/IT` flag for session 1 desktop execution.
 - **Verification**:
   - Provided direct 1-click Desktop launcher so the user can interact directly with the emulator window on their monitor.
+
+---
+
+## 2026-11-07 11:51 IST
+
+### Customer Mobile App Launch & Verification on Active Pixel 9 Emulator
+- **Request:** "run the atarashi customer app on it"
+- **Goal:** Launch and bundle `@atarashi/customer` (`com.atarashi.customer`) on the running Android Studio Pixel 9 emulator (`emulator-5554`) connected to Metro.
+- **Changes:**
+  - Verified `emulator-5554` connection via `adb devices`.
+  - Re-established ADB port reverse tunnel: `adb -s emulator-5554 reverse tcp:8081 tcp:8081`.
+  - Resolved Metro connectivity via reverse tunnel `atarashi-customer://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081`.
+  - Successfully loaded and bundled JavaScript client bundle into memory.
+  - Verified full UI rendering of the newly overhauled Porter-grade landing screen:
+    - Service selection cards (`2 Wheeler`, `Trucks & Freight`, `House Shifting`).
+    - "Where do you want to deliver?" quick search bar.
+    - Saved quick destinations (`Home`, `Office`, `Warehouse`).
+    - 5-tab floating capsule bottom navigation bar (`Dispatch`, `Activity`, `Send`, `Places`, `Wallet`).
+- **Verification**:
+  - Captured verified binary screenshot: `cust_screen_rendered.png` showing live responsive home screen.
