@@ -1063,3 +1063,28 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
   - Verified on live Android Studio Pixel 9 Emulator (`emulator-5554`) with Porter-grade 3-stage UI.
 
+---
+
+## 2026-11-07 17:05 IST
+
+### Standalone Production Release Build & Direct Installation on Physical Android Device
+- **Request:** "so now you have my phone, install the app to there, with development build, basically the release."
+- **Goal:** Compile a standalone release build of `@atarashi/customer` (`com.atarashi.customer`) embedding the production JavaScript bundle, Hermes bytecode, and optimized assets, and install it directly via ADB onto the user's connected physical Samsung Galaxy smartphone (`RZGL304MCMB`).
+- **Technical Challenges & Fixes**:
+  - **Windows MAX_PATH Path Truncation in CMake/Ninja**: During `assembleRelease`, Ninja failed with `mkdir(... No such file or directory)` because the generated autolinking path for `react_codegen_rnsvg` exceeded the Windows 260-character maximum (`C:\tmp\cxx\customer\RelWithDebInfo\...\rnsvg` = 262 characters).
+  - Shortened `buildStagingDirectory` in `apps/customer/android/app/build.gradle` to `C:/b`, saving 16 characters and bringing maximum path length well within Windows boundaries (246 chars).
+  - Full CMake C++ compilation succeeded for both `arm64-v8a` and `x86_64` targets along with R8 minification and resource optimization.
+- **Build Output**:
+  - Generated standalone release APK: `apps/customer/android/app/build/outputs/apk/release/app-release.apk` (63.9 MB).
+  - Pre-bundled Hermes bytecode, embedded fonts, icons, vector assets, and Google Maps API keys with zero dependency on an active Metro bundler or computer connection.
+- **Physical Device Deployment & Verification**:
+  - Target: Samsung Galaxy (`RZGL304MCMB`, product: `pa1qxins`, model: `SM_S931B`).
+  - Executed streamed install via `adb -s RZGL304MCMB install -r .../app-release.apk` -> `Success`.
+  - Verified package update time: `lastUpdateTime=2026-11-07 17:04:00`.
+  - Launched `com.atarashi.customer/.MainActivity` directly on device.
+  - Captured live device screencap (`phone_screen_rendered.png` & `phone_screen_stage2.png`):
+    - Porter-grade home screen loaded instantly and rendered smoothly on high-DPI AMOLED panel.
+    - Verified Stage 1 service discovery (`2 Wheeler`, `Trucks & Freight`, `House Shifting`) and quick destinations.
+    - Verified Stage 2 vehicle drawer and paise pricing calculation.
+
+
