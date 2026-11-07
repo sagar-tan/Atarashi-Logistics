@@ -1202,3 +1202,14 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
 - **Verification Matrix**:
   - `npm run typecheck`: **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
   - `npm test`: **32 / 32 tests passed** (22 API integration tests + 10 domain schema tests).
+
+  5. **Live Android Emulator Verification (`emulator-5554`)**:
+     - Standalone release APK compiled via `./gradlew assembleRelease` (5m 40s) and installed exclusively on Android Studio Emulator (`emulator-5554` / `Pixel_9`) per Device Target Isolation rules.
+     - Launched `com.atarashi.customer/.MainActivity`:
+       - Verified "Sign In" pill appears dynamically in top header.
+       - Tapped "Sign In" -> Navigated smoothly to Neomorphic `/auth` screen.
+       - Verified 10-digit phone input with fixed `+91` prefix (🇮🇳 flag) and instant regex validation activating "Get OTP" button upon entering 10 digits.
+       - Switched to "Operations / Email" tab -> Verified Sign In / Create Account modes.
+       - Signed into real live production account (`customer_1794061061868@atarashi.in`) -> Session encrypted into hardware-backed Android KeyStore via `expo-secure-store`.
+       - Navigated back to home screen -> Header pill dynamically updated from "Sign In" to active user account handle (`customer_1794061061868`).
+       - Force stopped and killed app process (`am force-stop com.atarashi.customer`), re-launched app -> Hydrated active session from `SecureStore` without dropping to guest mode (`text="customer_1794061061868"` persisted).
