@@ -104,12 +104,6 @@ export async function searchLocationPlaces(query: string): Promise<LocationPredi
         },
         body: JSON.stringify({
           input: query,
-          locationBias: {
-            circle: {
-              center: { latitude: 12.9716, longitude: 77.5946 },
-              radius: 35000.0, // 35 km radius around Bengaluru
-            },
-          },
           includedRegionCodes: ['in'],
         }),
       });
@@ -124,9 +118,9 @@ export async function searchLocationPlaces(query: string): Promise<LocationPredi
               predictions.push({
                 id: pred.placeId,
                 primaryText: pred.structuredFormat?.mainText?.text ?? pred.text?.text ?? query,
-                secondaryText: pred.structuredFormat?.secondaryText?.text ?? 'Bengaluru, Karnataka',
+                secondaryText: pred.structuredFormat?.secondaryText?.text ?? 'India',
                 fullAddress: pred.text?.text ?? query,
-                // Default center or fetch coords via place details
+                // Default coordinates if details are not yet loaded
                 coordinates: { latitude: 12.9716, longitude: 77.5946 },
               });
             }
@@ -166,33 +160,62 @@ export async function searchLocationPlaces(query: string): Promise<LocationPredi
 }
 
 export async function fetchPlaceDetails(
-  placeId: string
+  placeId: string,
+  addressFallback?: string
 ): Promise<{ coordinates: Coordinates; address?: string } | null> {
-  if (!GOOGLE_MAPS_KEY || !placeId) return null;
-  try {
-    const url = `https://places.googleapis.com/v1/places/${placeId}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_MAPS_KEY,
-        'X-Goog-FieldMask': 'location,displayName,formattedAddress',
-      },
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.location) {
-        return {
-          coordinates: {
-            latitude: Number(data.location.latitude),
-            longitude: Number(data.location.longitude),
-          },
-          address: data.formattedAddress,
-        };
+  if (!GOOGLE_MAPS_KEY) return null;
+  if (placeId) {
+    try {
+      const url = `https://places.googleapis.com/v1/places/${placeId}`;
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_MAPS_KEY,
+          'X-Goog-FieldMask': 'location,displayName,formattedAddress',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.location) {
+          return {
+            coordinates: {
+              latitude: Number(data.location.latitude),
+              longitude: Number(data.location.longitude),
+            },
+            address: data.formattedAddress,
+          };
+        }
       }
+    } catch (err) {
+      console.warn('[Google Maps] Place details fetch failed:', err);
     }
-  } catch (err) {
-    console.warn('[Google Maps] Place details fetch failed:', err);
   }
+
+  // Geocode address fallback if placeId details failed or was unavailable
+  if (addressFallback && addressFallback.trim().length > 0) {
+    try {
+      const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addressFallback)}&key=${GOOGLE_MAPS_KEY}`;
+      const geoRes = await fetch(geoUrl);
+      if (geoRes.ok) {
+        const geoData = await geoRes.json();
+        if (geoData.results && geoData.results.length > 0) {
+          const loc = geoData.results[0].geometry?.location;
+          if (loc) {
+            return {
+              coordinates: {
+                latitude: Number(loc.lat),
+                longitude: Number(loc.lng),
+              },
+              address: geoData.results[0].formatted_address,
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Google Maps] Geocode address fallback failed:', err);
+    }
+  }
+
   return null;
 }
 
@@ -209,31 +232,49 @@ export async function reverseGeocodeCoordinates(
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           const first = data.results[0];
+          const neighborhood =
+            first.address_components?.find((c: { types: string[]; long_name: string }) =>
+              c.types.includes('sublocality_level_1') ||
+              c.types.includes('neighborhood') ||
+              c.types.includes('locality') ||
+              c.types.includes('administrative_area_level_2')
+            )?.long_name ??
+            first.address_components?.[1]?.long_name ??
+            first.address_components?.[0]?.long_name ??
+            'Selected Location';
+
           return {
             address: first.formatted_address,
-            landmark: first.address_components?.[1]?.long_name ?? 'Bengaluru Area',
+            landmark: neighborhood,
           };
         }
       }
     } catch (err) {
-      console.warn('[Google Maps] Reverse geocoding failed, using GIS lookup:', err);
+      console.warn('[Google Maps] Reverse geocoding failed, using coordinate fallback:', err);
     }
   }
 
-  // Nearest hub calculation
-  let closest = BENGALURU_LOGISTICS_HUBS[0];
-  let minDiff = 999;
-  for (const hub of BENGALURU_LOGISTICS_HUBS) {
-    const diff =
-      Math.abs(hub.coordinates.latitude - lat) + Math.abs(hub.coordinates.longitude - lng);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closest = hub;
+  // If in Bengaluru bounds (12.7-13.3 N, 77.3-77.9 E), match closest hub
+  if (lat >= 12.7 && lat <= 13.3 && lng >= 77.3 && lng <= 77.9) {
+    let closest = BENGALURU_LOGISTICS_HUBS[0];
+    let minDiff = 999;
+    for (const hub of BENGALURU_LOGISTICS_HUBS) {
+      const diff =
+        Math.abs(hub.coordinates.latitude - lat) + Math.abs(hub.coordinates.longitude - lng);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = hub;
+      }
     }
+    return {
+      address: closest.fullAddress,
+      landmark: closest.primaryText,
+    };
   }
 
+  // Exact fallback for locations outside Bengaluru (e.g. Haryana, Delhi, Mumbai, etc.)
   return {
-    address: closest.fullAddress,
-    landmark: closest.primaryText,
+    address: `Pinpoint (${lat.toFixed(5)}° N, ${lng.toFixed(5)}° E)`,
+    landmark: 'Selected Location',
   };
 }

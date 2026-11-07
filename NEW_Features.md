@@ -1034,3 +1034,32 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - 5-tab floating capsule bottom navigation bar (`Dispatch`, `Activity`, `Send`, `Places`, `Wallet`).
 - **Verification**:
   - Captured verified binary screenshot: `cust_screen_rendered.png` showing live responsive home screen.
+
+---
+
+## 2026-11-07 12:35 IST
+
+### Nationwide Geocoding Resolution & PanResponder Stale Closure Snapping Fix
+- **Request:** "something wierd is happening with the dropoff thing, i search a location, like deeghot village in haryana, and it shows a selected location in there, the moment i adjust it, it snaps back to some other location."
+- **Goal:**
+  1. Eliminate the location snapping bug where panning/adjusting a searched place outside Bangalore (e.g. Deeghot Village, Haryana) snapped the pin 2,000 km back to Bangalore.
+  2. Support seamless pan, drag, and reverse geocoding across any state/city/village throughout India.
+- **Root Cause Identified**:
+  1. **PanResponder Stale Closure**: In `apps/customer/src/components/location-picker-modal.tsx`, `panResponder` was instantiated once inside `useRef(PanResponder.create({...})).current`. When the user released a map drag, `onPanResponderRelease` invoked `applyCoordinateShift(dx, dy)`. Because `applyCoordinateShift` and `mapCenterCoords` were closed over from the component mount render, `mapCenterCoords` was permanently frozen at the initial Bangalore coordinates (`12.9352, 77.6245`). The moment the user dragged the pin at Deeghot, Haryana, the callback recalculated coordinates based on Bangalore (`12.9352 + delta`), teleporting the map 2,000 km back to Koramangala.
+  2. **Restrictive 35km Autocomplete Bias**: In `apps/customer/src/lib/maps.ts`, Google Places Autocomplete previously had a strict `locationBias` circle centered on Bangalore with a 35 km radius, suppressing places across the rest of India.
+  3. **Synthetic Place ID Fallback**: Google Places synthetic autocomplete IDs (beginning with `E...`) occasionally fail standard `places:details` lookups; missing fallback coordinates caused the API to default to Bangalore coordinates.
+- **Changes Applied**:
+  - **`apps/customer/src/components/location-picker-modal.tsx`**:
+    - Introduced mutable React refs: `selectedAddressRef`, `selectedCoordsRef`, `mapCenterCoordsRef`, and `zoomLevelRef` to decouple pan gestures from stale React state closures.
+    - Added `applyCoordinateShiftRef` updated on every render pass so `panResponder.onPanResponderRelease` always accesses the active coordinate state.
+    - Updated `applyCoordinateShift` to compute lat/lng deltas directly from `mapCenterCoordsRef.current` and `zoomLevelRef.current`.
+    - Updated `handleSelectPrediction` to synchronize both React state and ref values immediately on prediction selection, and reset pan offsets to zero.
+    - Updated `handleRecenterGPS`, `handleZoomIn`, `handleZoomOut`, and `handleMapTap` to read and write to refs.
+  - **`apps/customer/src/lib/maps.ts`**:
+    - Removed restrictive 35km circle bias in `searchLocationPlaces` so autocomplete searches work across all of India (`includedRegionCodes: ['in']`).
+    - Added Google Geocoding API address fallback in `fetchPlaceDetails(placeId, addressFallback)` to guarantee coordinate resolution even when Google Places synthetic IDs cannot be retrieved.
+    - Upgraded `reverseGeocodeCoordinates` to extract real neighborhood, sublocality, and city components across any region in India.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
+  - Verified on live Android Studio Pixel 9 Emulator (`emulator-5554`) with Porter-grade 3-stage UI.
+

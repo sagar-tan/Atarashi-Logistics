@@ -128,20 +128,44 @@ export function LocationPickerModal({
     return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=640x500&scale=2&maptype=roadmap&key=${GOOGLE_MAPS_KEY}`;
   }, [mapCenterCoords.latitude, mapCenterCoords.longitude, zoomLevel, GOOGLE_MAPS_KEY]);
 
+  // Fresh mutable refs to completely eliminate stale closures in PanResponder & gesture callbacks
+  const selectedAddressRef = useRef<string>(initialAddress);
+  const selectedCoordsRef = useRef<Coordinates>(initialCoords);
+  const mapCenterCoordsRef = useRef<Coordinates>(initialCoords);
+  const zoomLevelRef = useRef<number>(18);
+
+  // Keep refs continually synchronized with state
+  selectedAddressRef.current = selectedAddress;
+  selectedCoordsRef.current = selectedCoords;
+  mapCenterCoordsRef.current = mapCenterCoords;
+  zoomLevelRef.current = zoomLevel;
+
   const handleZoomIn = () => {
-    setMapCenterCoords(selectedCoords);
+    const currentPin = selectedCoordsRef.current;
+    mapCenterCoordsRef.current = currentPin;
+    setMapCenterCoords(currentPin);
     currentPanRef.current = { x: 0, y: 0 };
     mapPanX.setValue(0);
     mapPanY.setValue(0);
-    setZoomLevel((prev) => Math.min(prev + 1, 20));
+    setZoomLevel((prev) => {
+      const next = Math.min(prev + 1, 20);
+      zoomLevelRef.current = next;
+      return next;
+    });
   };
 
   const handleZoomOut = () => {
-    setMapCenterCoords(selectedCoords);
+    const currentPin = selectedCoordsRef.current;
+    mapCenterCoordsRef.current = currentPin;
+    setMapCenterCoords(currentPin);
     currentPanRef.current = { x: 0, y: 0 };
     mapPanX.setValue(0);
     mapPanY.setValue(0);
-    setZoomLevel((prev) => Math.max(prev - 1, 14));
+    setZoomLevel((prev) => {
+      const next = Math.max(prev - 1, 14);
+      zoomLevelRef.current = next;
+      return next;
+    });
   };
 
   // Map panning animation offsets
@@ -158,9 +182,15 @@ export function LocationPickerModal({
 
   useEffect(() => {
     if (visible) {
+      selectedAddressRef.current = initialAddress;
+      selectedCoordsRef.current = initialCoords;
+      mapCenterCoordsRef.current = initialCoords;
+      zoomLevelRef.current = 18;
+
       setSelectedAddress(initialAddress);
       setSelectedCoords(initialCoords);
       setMapCenterCoords(initialCoords);
+      setZoomLevel(18);
       setSearchQuery('');
       setPredictions([]);
       setIsFullscreen(false);
@@ -246,32 +276,42 @@ export function LocationPickerModal({
 
   // Convert map pan offset to geographic lat/lng coordinate shift
   const applyCoordinateShift = async (dx: number, dy: number) => {
-    // High-precision geographic offset at zoom level
-    // ~0.58 meters per pixel at zoom 18 in Bangalore (~12.9° N)
-    const metersPerPixel = 0.58 * Math.pow(2, 18 - zoomLevel);
+    // ALWAYS pull freshest base coordinate and zoom from refs to prevent closure staleness
+    const center = mapCenterCoordsRef.current;
+    const currentZoom = zoomLevelRef.current;
+
+    const metersPerPixel = 0.58 * Math.pow(2, 18 - currentZoom);
     const latDelta = (dy * metersPerPixel) / 111000;
     const lngDelta =
       -(dx * metersPerPixel) /
-      (111000 * Math.cos((mapCenterCoords.latitude * Math.PI) / 180));
+      (111000 * Math.cos((center.latitude * Math.PI) / 180));
 
-    const newLat = Number((mapCenterCoords.latitude + latDelta).toFixed(6));
-    const newLng = Number((mapCenterCoords.longitude + lngDelta).toFixed(6));
+    const newLat = Number((center.latitude + latDelta).toFixed(6));
+    const newLng = Number((center.longitude + lngDelta).toFixed(6));
     const newCoords = { latitude: newLat, longitude: newLng };
+
+    selectedCoordsRef.current = newCoords;
     setSelectedCoords(newCoords);
 
     // Reverse geocode to get live road name & formatted address
     const { address, landmark } = await reverseGeocodeCoordinates(newLat, newLng);
+    selectedAddressRef.current = address;
     setSelectedAddress(address);
     setLandmarkName(landmark);
 
-    // If panned significantly (> 160px from image center), re-center tile smoothly
-    if (Math.hypot(dx, dy) > 160) {
+    // If panned significantly (> 140px from image center), re-center tile smoothly
+    if (Math.hypot(dx, dy) > 140) {
+      mapCenterCoordsRef.current = newCoords;
       setMapCenterCoords(newCoords);
       currentPanRef.current = { x: 0, y: 0 };
       mapPanX.setValue(0);
       mapPanY.setValue(0);
     }
   };
+
+  // Ref hook to always invoke latest applyCoordinateShift from PanResponder
+  const applyCoordinateShiftRef = useRef(applyCoordinateShift);
+  applyCoordinateShiftRef.current = applyCoordinateShift;
 
   // Map touch drag responder for continuous panning
   const panResponder = useRef(
@@ -293,7 +333,7 @@ export function LocationPickerModal({
         currentPanRef.current.x += gesture.dx;
         currentPanRef.current.y += gesture.dy;
         dropPin();
-        applyCoordinateShift(currentPanRef.current.x, currentPanRef.current.y);
+        applyCoordinateShiftRef.current(currentPanRef.current.x, currentPanRef.current.y);
       },
       onPanResponderTerminate: () => {
         dropPin();
@@ -333,7 +373,7 @@ export function LocationPickerModal({
       }),
     ]).start(() => {
       dropPin();
-      applyCoordinateShift(nextX, nextY);
+      applyCoordinateShiftRef.current(nextX, nextY);
     });
   };
 
@@ -357,12 +397,15 @@ export function LocationPickerModal({
       }),
     ]).start(async () => {
       dropPin();
+      selectedCoordsRef.current = initialCoords;
+      mapCenterCoordsRef.current = initialCoords;
       setSelectedCoords(initialCoords);
       setMapCenterCoords(initialCoords);
       const { address, landmark } = await reverseGeocodeCoordinates(
         initialCoords.latitude,
         initialCoords.longitude
       );
+      selectedAddressRef.current = address;
       setSelectedAddress(address);
       setLandmarkName(landmark);
     });
@@ -376,8 +419,8 @@ export function LocationPickerModal({
     let primary = item.primaryText;
 
     // Fetch high-precision GPS coordinates from Google Places if available
-    if (item.id && (item.id.startsWith('ChIJ') || item.id.length > 20)) {
-      const details = await fetchPlaceDetails(item.id);
+    if (item.id && !item.id.startsWith('blr_')) {
+      const details = await fetchPlaceDetails(item.id, fullAddr);
       if (details) {
         coords = details.coordinates;
         if (details.address) {
@@ -386,6 +429,10 @@ export function LocationPickerModal({
       }
     }
 
+    selectedCoordsRef.current = coords;
+    mapCenterCoordsRef.current = coords;
+    selectedAddressRef.current = fullAddr;
+
     setSelectedAddress(fullAddr);
     setSelectedCoords(coords);
     setMapCenterCoords(coords);
@@ -393,6 +440,8 @@ export function LocationPickerModal({
     setSearchQuery('');
     setPredictions([]);
     currentPanRef.current = { x: 0, y: 0 };
+    mapPanX.setValue(0);
+    mapPanY.setValue(0);
 
     liftPin();
     Animated.parallel([
