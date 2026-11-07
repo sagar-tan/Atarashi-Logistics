@@ -999,3 +999,18 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - Re-launched Customer app (`com.atarashi.customer`) and verified clean home screen bundle reload.
 - **Verification**:
   - Captured verified screenshot: `cust_emulator_restarted_ready.png` showing clean home screen with active Metro bundle loaded.
+
+---
+
+## 2026-11-07 08:06 IST
+
+### Desktop Interactive Emulator Launcher Configuration
+- **Request:** "mate i can't fucking USE that shi. i want the emulator that i can use asw"
+- **Goal:** Ensure the user has an interactive, on-screen GUI emulator window they can directly see, click, touch, and use on their Windows desktop.
+- **Changes:**
+  - Diagnosed window station isolation: when the emulator was restarted from background daemon shells, Windows spawned the process in a non-interactive background station without attaching its Qt GUI window to the user's desktop (`WinSta0\Default`).
+  - Cleared stale lock files (`hardware-qemu.ini.lock`, `multiinstance.lock`) from `C:\Users\tw_strat\.android\avd\Pixel_9.avd`.
+  - Created interactive launcher script on the user's Desktop: [`C:\Users\tw_strat\Desktop\Launch_Pixel_9.bat`](file:///c:/Users/tw_strat/Desktop/Launch_Pixel_9.bat).
+  - Configured Task Scheduler interactive task (`LaunchPixel9`) with `/IT` flag for session 1 desktop execution.
+- **Verification**:
+  - Provided direct 1-click Desktop launcher so the user can interact directly with the emulator window on their monitor.
