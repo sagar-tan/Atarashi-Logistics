@@ -140,15 +140,15 @@ export function TactileMap({
         </G>
 
         {/* Major Arterial Roads / Expressways */}
-        <G stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M-10,140 C80,140 120,90 200,85 S320,130 420,120" />
-          <Path d="M160,-10 C160,80 180,120 230,250" />
-          <Path d="M60,250 C70,160 140,80 280,30" />
+        <G stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <Path d="M-10,140 C80,140 120,90 200,85 S320,130 420,120" fill="none" />
+          <Path d="M160,-10 C160,80 180,120 230,250" fill="none" />
+          <Path d="M60,250 C70,160 140,80 280,30" fill="none" />
         </G>
-        <G stroke="#F4F8F4" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M-10,140 C80,140 120,90 200,85 S320,130 420,120" />
-          <Path d="M160,-10 C160,80 180,120 230,250" />
-          <Path d="M60,250 C70,160 140,80 280,30" />
+        <G stroke="#F4F8F4" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <Path d="M-10,140 C80,140 120,90 200,85 S320,130 420,120" fill="none" />
+          <Path d="M160,-10 C160,80 180,120 230,250" fill="none" />
+          <Path d="M60,250 C70,160 140,80 280,30" fill="none" />
         </G>
 
         {/* Surge Pricing Hotspot Overlay (if enabled) */}

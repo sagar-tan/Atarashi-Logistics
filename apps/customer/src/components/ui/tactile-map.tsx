@@ -77,6 +77,9 @@ export interface TactileMapProps {
   height?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  showDriverHud?: boolean;
+  showCourierMarker?: boolean;
+  showEtaBadge?: boolean;
 }
 
 // Bezier control coordinates in 400x240 SVG viewbox
@@ -111,6 +114,9 @@ export function TactileMap({
   height = 250,
   style,
   testID,
+  showDriverHud = false,
+  showCourierMarker = false,
+  showEtaBadge = false,
 }: TactileMapProps) {
   const windowWidth = Dimensions.get('window').width;
   const [containerWidth, setContainerWidth] = useState<number>(
@@ -298,20 +304,22 @@ export function TactileMap({
           strokeWidth="7"
           strokeLinecap="round"
           strokeLinejoin="round"
+          fill="none"
         >
-          <Path d="M-10,135 C80,135 125,85 200,80 S320,125 420,115" />
-          <Path d="M150,-10 C150,80 170,120 220,250" />
-          <Path d="M50,250 C65,160 135,75 275,25" />
+          <Path d="M-10,135 C80,135 125,85 200,80 S320,125 420,115" fill="none" />
+          <Path d="M150,-10 C150,80 170,120 220,250" fill="none" />
+          <Path d="M50,250 C65,160 135,75 275,25" fill="none" />
         </G>
         <G
           stroke="#F4F8F4"
           strokeWidth="4.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          fill="none"
         >
-          <Path d="M-10,135 C80,135 125,85 200,80 S320,125 420,115" />
-          <Path d="M150,-10 C150,80 170,120 220,250" />
-          <Path d="M50,250 C65,160 135,75 275,25" />
+          <Path d="M-10,135 C80,135 125,85 200,80 S320,125 420,115" fill="none" />
+          <Path d="M150,-10 C150,80 170,120 220,250" fill="none" />
+          <Path d="M50,250 C65,160 135,75 275,25" fill="none" />
         </G>
 
         {/* Route Soft Shadow */}
@@ -354,62 +362,66 @@ export function TactileMap({
       </Svg>
 
       {/* Animated Moving Courier Marker (60fps Native Driver Transform) */}
-      <Animated.View
-        style={[
-          styles.courierMarkerContainer,
-          {
-            transform: [{ translateX }, { translateY }],
-          },
-        ]}
-      >
-        {/* Pulsing Radar Ring */}
+      {showCourierMarker && (
         <Animated.View
           style={[
-            styles.radarWave,
+            styles.courierMarkerContainer,
             {
-              transform: [{ scale: pulseScale }],
-              opacity: pulseOpacity,
+              transform: [{ translateX }, { translateY }],
             },
           ]}
-        />
-        {/* Tactile Courier Bubble */}
-        <View style={styles.courierBubble}>
-          {renderVehicleIcon()}
-          <View style={styles.courierLivePip} />
-        </View>
-      </Animated.View>
+        >
+          {/* Pulsing Radar Ring */}
+          <Animated.View
+            style={[
+              styles.radarWave,
+              {
+                transform: [{ scale: pulseScale }],
+                opacity: pulseOpacity,
+              },
+            ]}
+          />
+          {/* Tactile Courier Bubble */}
+          <View style={styles.courierBubble}>
+            {renderVehicleIcon()}
+            <View style={styles.courierLivePip} />
+          </View>
+        </Animated.View>
+      )}
 
       {/* Top HUD: Live ETA Capsule Badge & Direction Chip */}
-      <View style={styles.topHud}>
-        <View style={styles.etaBadge}>
-          <View style={styles.livePulseDotContainer}>
-            <Animated.View
-              style={[
-                styles.livePulseRing,
-                {
-                  transform: [{ scale: pulseScale }],
-                  opacity: pulseOpacity,
-                },
-              ]}
-            />
-            <View style={styles.liveDotCore} />
+      {showEtaBadge && (
+        <View style={styles.topHud}>
+          <View style={styles.etaBadge}>
+            <View style={styles.livePulseDotContainer}>
+              <Animated.View
+                style={[
+                  styles.livePulseRing,
+                  {
+                    transform: [{ scale: pulseScale }],
+                    opacity: pulseOpacity,
+                  },
+                ]}
+              />
+              <View style={styles.liveDotCore} />
+            </View>
+            <Text style={styles.etaBadgeText} numberOfLines={1}>
+              {resolvedEtaText}
+            </Text>
           </View>
-          <Text style={styles.etaBadgeText} numberOfLines={1}>
-            {resolvedEtaText}
-          </Text>
-        </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={openGoogleMaps}
-          style={styles.openMapBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Open external Google Map"
-        >
-          <Compass size={13} color={theme.colors.dark} />
-          <ExternalLink size={11} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={openGoogleMaps}
+            style={styles.openMapBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open external Google Map"
+          >
+            <Compass size={13} color={theme.colors.dark} />
+            <ExternalLink size={11} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Origin / Destination Mini Tags (Positioned over pins) */}
       <View
@@ -438,40 +450,42 @@ export function TactileMap({
         </Text>
       </View>
 
-      {/* Bottom Floating Tactile Cockpit */}
-      <View style={styles.bottomHud}>
-        <View style={styles.courierIdentity}>
-          <View style={styles.courierAvatar}>
-            <Text style={styles.courierInitials}>
-              {courierName.charAt(0).toUpperCase()}
-            </Text>
-            <View style={styles.verifiedBadge}>
-              <ShieldCheck size={10} color="#FFFFFF" />
+      {/* Bottom Floating Tactile Cockpit (Only shown when active delivery is in progress) */}
+      {showDriverHud && (
+        <View style={styles.bottomHud}>
+          <View style={styles.courierIdentity}>
+            <View style={styles.courierAvatar}>
+              <Text style={styles.courierInitials}>
+                {courierName.charAt(0).toUpperCase()}
+              </Text>
+              <View style={styles.verifiedBadge}>
+                <ShieldCheck size={10} color="#FFFFFF" />
+              </View>
             </View>
-          </View>
-          <View style={styles.courierDetails}>
-            <View style={styles.courierNameRow}>
-              <Text style={styles.courierName} numberOfLines={1}>
-                {courierName}
+            <View style={styles.courierDetails}>
+              <View style={styles.courierNameRow}>
+                <Text style={styles.courierName} numberOfLines={1}>
+                  {courierName}
+                </Text>
+              </View>
+              <Text style={styles.courierVehicle} numberOfLines={1}>
+                {courierPlate} • {distanceKm} km away
               </Text>
             </View>
-            <Text style={styles.courierVehicle} numberOfLines={1}>
-              {courierPlate} • {distanceKm} km away
-            </Text>
           </View>
-        </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleCall}
-          style={styles.callButton}
-          accessibilityRole="button"
-          accessibilityLabel={`Call courier ${courierName}`}
-        >
-          <Phone size={14} color="#FFFFFF" />
-          <Text style={styles.callButtonText}>Call</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleCall}
+            style={styles.callButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Call courier ${courierName}`}
+          >
+            <Phone size={14} color="#FFFFFF" />
+            <Text style={styles.callButtonText}>Call</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

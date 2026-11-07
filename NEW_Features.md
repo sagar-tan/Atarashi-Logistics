@@ -910,3 +910,76 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
 - **Verification**:
   - `npm run typecheck`: Passed with **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
   - `npm test`: **30 / 30 tests passed**.
+
+
+---
+
+## 2026-11-07 07:18 IST
+
+### Elimination of Fake Driver Simulation, SVG Geometry Distortion Fix & Porter-Grade Customer Home Screen Overhaul
+- **Request:** "and can you see how atarashi's layout is fucking Shite and how much more text and confusing, and well non premium it looks.and WTF is this map like geometry, and this shitty simulation."
+- **Goal:**
+  1. Fix the atrocious black jagged star geometry on the map caused by missing `fill="none"` on SVG cubic bezier road paths.
+  2. Permanently eliminate the fake hardcoded driver simulation ("Rajesh Kumar • KA 03 MZ 9814 • Courier arriving in ~13 mins • Call") from the landing page.
+  3. Remove the confusing "Customer Hub" title and the intimidating text-heavy data-entry form from the home screen.
+  4. Redesign the customer app home screen to mirror the clean, luxurious, service-centric layout of the actual Porter app (`2 Wheeler`, `Trucks & Freight`, `House Shifting` + prominent "Where do you want to deliver?" action bar + quick saved places).
+- **Changes:**
+  - **Fixed `TactileMap.tsx` in `apps/customer` and `apps/driver`**:
+    - Added `fill="none"` to all `<G>` avenue containers and `<Path d="..." />` road curves. This permanently prevents SVG rendering engines from filling open bezier curves with solid black polygons.
+    - Added conditional props: `showDriverHud?: boolean` (defaults to `false`), `showCourierMarker?: boolean` (defaults to `false`), and `showEtaBadge?: boolean` (defaults to `false`).
+    - The bottom driver cockpit card (`bottomHud`) and top ETA badge (`topHud`) now ONLY render in Phase 4 (`active_tracking`) when an active delivery is genuinely in progress.
+  - **Overhauled Home Screen in `apps/customer/src/app/index.tsx`**:
+    - **Header**: Replaced "Customer Hub" with clean branding and an interactive city selector (`📍 Bengaluru, KA ▾`).
+    - **Hero Search Bar**: Added prominent Porter-style action card (`Where do you want to deliver?` with search icon and arrow).
+    - **Porter-Grade Service Hierarchy Cards**:
+      - `[ 🛵 2 Wheeler ]`: "FASTEST • 15 MINS", "Parcels up to 20 kg • Documents, food, boxed items", "From ₹35".
+      - `[ 🚚 Trucks & Freight ]`: "BULK CARGO", "Tata Ace, 8ft Pickup, 3W • Cargo up to 750 kg", "From ₹150".
+      - `[ 🏠 House Shifting ]`: "FULL SERVICE", "Dedicated truck, trained loading crew & packing", "Instant Quote" (opens `PackersMoversModal`).
+    - **Quick Saved Destinations**: Rapid 1-tap chips for `[ 🏠 Home • Koramangala ]`, `[ 🏢 Office • Residency Rd ]`, and `[ 📦 Warehouse • Peenya ]`.
+    - **Trust Strip**: "100% Electric & Eco Fleet • Direct GST Invoices • Live GPS".
+    - **Self-Contained Stage 2 Route & Vehicle Drawer**:
+      - Moved pickup & drop destination inputs with swap button (`⇅`) and pinpoint triggers into Stage 2 so route configuration only appears when a service is selected.
+  - **Verification**:
+    - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
+    - Re-bundled and tested live on Android Studio Pixel 9 Emulator (`emulator-5554`) via ADB.
+    - Captured verified binary screenshots:
+      - `cust_clean_home_verified.png` (277 KB): Clean home screen with city dropdown, search bar, service cards, and saved destinations.
+      - `cust_stage2_clean_verified.png` (297 KB): Route card with vehicle selection, add-on chips, and live paise fare.
+
+---
+
+## 2026-11-07 07:44 IST
+
+### Google Maps Satellite (Hybrid) Doorstep & Gate Pinpointing in Customer Location Picker
+- **Request:** "let's add satellite option in maps cuz let's be honest, the current apps are fucking shite to do do that. while picking pickup and dropoff location"
+- **Goal:** Provide high-resolution Google Maps Satellite Hybrid imagery when selecting pickup and drop-off locations so users can identify specific apartment gates, building rooftops, driveways, and service alleys with pinpoint precision, addressing the core frustration of standard delivery apps whose vector roadmaps obscure real-world gates and compounds.
+- **Changes:**
+  - **Enhanced `apps/customer/src/components/location-picker-modal.tsx`**:
+    - **Google Maps Platform Static Imagery**:
+      - Integrated real Google Maps Satellite Hybrid (`maptype=hybrid`, scale 2, 640x500 high-density tile) and Google Roadmap (`maptype=roadmap`).
+      - Verified active API key: `AIzaSyBR9AAM_0obBJGPKnS6KipiZ-_IM8VXfWU`.
+    - **Interactive Map Mode Switcher Pill**:
+      - Positioned top-left inside the map card: `[ 🗺️ Street ]` | `[ 🌐 Satellite ]`.
+      - Instant state toggle without screen flicker via `expo-image` disk caching.
+      - Defaulted to `satellite` at zoom 18x for maximum doorstep clarity.
+    - **Doorstep Zoom Controls & Adaptive Projection**:
+      - Added floating `[ + ]` (Zoom In, up to 20x) and `[ - ]` (Zoom Out, down to 14x) capsule controls.
+      - Implemented high-precision geographic projection: 0.58 meters/pixel at zoom 18 (~12.9° N Bangalore latitude), calculating lat/lng deltas from drag coordinates:
+        `latDelta = (dy * metersPerPixel) / 111000`
+        `lngDelta = -(dx * metersPerPixel) / (111000 * Math.cos(lat * rad))`
+    - **Fluid Zero-Gap Panning Surface**:
+      - Centered 960x800 high-density tile canvas in `mapTouchSurface` with generous 250px+ margin on all four boundaries.
+      - Automatically re-centers tile when panning exceeds 160px from center, completely preventing white gaps or edge clipping.
+      - 60fps tactile pin bounce (`pinBounceAnim` lifts -14px on drag, drops with spring tension 90 on release) with ground contact shadow and speech bubble tooltip ("Your goods will be picked/dropped from here").
+    - **Live Reverse-Geocoding Dock**:
+      - Real-time road name and landmark resolution on pin drop (e.g. "Intermediate Ring Road, KHB Colony, Block 4, Koramangala").
+      - Displays live latitude/longitude coordinates to 4 decimal places.
+      - Selecting "Confirm Location →" passes verified coordinates directly back to the route configuration.
+- **Verification**:
+  - `npm run typecheck` across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`): **0 errors**.
+  - Verified live on Android Studio Pixel 9 Emulator (`emulator-5554`) via ADB:
+    - `cust_screen_picker_opened.png`: Satellite mode rendering real rooftops, temple, and road network.
+    - `cust_screen_street_toggled.png`: Toggled back to Street roadmap view.
+    - `cust_screen_satellite_zoom19.png`: Zoomed to 19x high resolution.
+    - `cust_screen_drag_success.png`: Panned to Intermediate Ring Rd with zero whitespace gaps and live reverse geocoded address.
+    - `cust_screen_after_confirm.png`: Confirmed location applied to vehicle selection card and recalculated fare to ₹200.00.

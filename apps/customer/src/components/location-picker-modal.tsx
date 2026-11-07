@@ -18,16 +18,21 @@
  */
 
 import type { Coordinates } from '@atarashi/domain';
+import { Image } from 'expo-image';
 import {
   ArrowDown,
   ArrowUp,
   Compass,
   Crosshair,
+  Globe,
+  Layers,
   LocateFixed,
   MapPin,
   Maximize2,
   Minimize2,
+  Minus,
   Navigation,
+  Plus,
   Search,
   X,
 } from 'lucide-react-native';
@@ -98,10 +103,46 @@ export function LocationPickerModal({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(initialAddress);
   const [selectedCoords, setSelectedCoords] = useState<Coordinates>(initialCoords);
+  const [mapCenterCoords, setMapCenterCoords] = useState<Coordinates>(initialCoords);
   const [landmarkName, setLandmarkName] = useState(
     target === 'dropoff' ? 'Delivery Destination' : 'Pickup Location'
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapMode, setMapMode] = useState<'street' | 'satellite'>('satellite');
+  const [zoomLevel, setZoomLevel] = useState<number>(18);
+  const [isMapImageLoading, setIsMapImageLoading] = useState(false);
+
+  const GOOGLE_MAPS_KEY =
+    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    'AIzaSyBR9AAM_0obBJGPKnS6KipiZ-_IM8VXfWU';
+
+  const satelliteMapUrl = React.useMemo(() => {
+    const lat = mapCenterCoords.latitude;
+    const lng = mapCenterCoords.longitude;
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=640x500&scale=2&maptype=hybrid&key=${GOOGLE_MAPS_KEY}`;
+  }, [mapCenterCoords.latitude, mapCenterCoords.longitude, zoomLevel, GOOGLE_MAPS_KEY]);
+
+  const streetMapUrl = React.useMemo(() => {
+    const lat = mapCenterCoords.latitude;
+    const lng = mapCenterCoords.longitude;
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=640x500&scale=2&maptype=roadmap&key=${GOOGLE_MAPS_KEY}`;
+  }, [mapCenterCoords.latitude, mapCenterCoords.longitude, zoomLevel, GOOGLE_MAPS_KEY]);
+
+  const handleZoomIn = () => {
+    setMapCenterCoords(selectedCoords);
+    currentPanRef.current = { x: 0, y: 0 };
+    mapPanX.setValue(0);
+    mapPanY.setValue(0);
+    setZoomLevel((prev) => Math.min(prev + 1, 20));
+  };
+
+  const handleZoomOut = () => {
+    setMapCenterCoords(selectedCoords);
+    currentPanRef.current = { x: 0, y: 0 };
+    mapPanX.setValue(0);
+    mapPanY.setValue(0);
+    setZoomLevel((prev) => Math.max(prev - 1, 14));
+  };
 
   // Map panning animation offsets
   const mapPanX = useRef(new Animated.Value(0)).current;
@@ -119,6 +160,7 @@ export function LocationPickerModal({
     if (visible) {
       setSelectedAddress(initialAddress);
       setSelectedCoords(initialCoords);
+      setMapCenterCoords(initialCoords);
       setSearchQuery('');
       setPredictions([]);
       setIsFullscreen(false);
@@ -204,12 +246,16 @@ export function LocationPickerModal({
 
   // Convert map pan offset to geographic lat/lng coordinate shift
   const applyCoordinateShift = async (dx: number, dy: number) => {
-    // 100 pixels in map viewport corresponds to ~0.005 degrees (~550 meters)
-    const latDelta = -(dy / 100) * 0.005;
-    const lngDelta = (dx / 100) * 0.005;
+    // High-precision geographic offset at zoom level
+    // ~0.58 meters per pixel at zoom 18 in Bangalore (~12.9° N)
+    const metersPerPixel = 0.58 * Math.pow(2, 18 - zoomLevel);
+    const latDelta = (dy * metersPerPixel) / 111000;
+    const lngDelta =
+      -(dx * metersPerPixel) /
+      (111000 * Math.cos((mapCenterCoords.latitude * Math.PI) / 180));
 
-    const newLat = Number((initialCoords.latitude + latDelta).toFixed(4));
-    const newLng = Number((initialCoords.longitude + lngDelta).toFixed(4));
+    const newLat = Number((mapCenterCoords.latitude + latDelta).toFixed(6));
+    const newLng = Number((mapCenterCoords.longitude + lngDelta).toFixed(6));
     const newCoords = { latitude: newLat, longitude: newLng };
     setSelectedCoords(newCoords);
 
@@ -217,6 +263,14 @@ export function LocationPickerModal({
     const { address, landmark } = await reverseGeocodeCoordinates(newLat, newLng);
     setSelectedAddress(address);
     setLandmarkName(landmark);
+
+    // If panned significantly (> 160px from image center), re-center tile smoothly
+    if (Math.hypot(dx, dy) > 160) {
+      setMapCenterCoords(newCoords);
+      currentPanRef.current = { x: 0, y: 0 };
+      mapPanX.setValue(0);
+      mapPanY.setValue(0);
+    }
   };
 
   // Map touch drag responder for continuous panning
@@ -304,6 +358,7 @@ export function LocationPickerModal({
     ]).start(async () => {
       dropPin();
       setSelectedCoords(initialCoords);
+      setMapCenterCoords(initialCoords);
       const { address, landmark } = await reverseGeocodeCoordinates(
         initialCoords.latitude,
         initialCoords.longitude
@@ -333,28 +388,22 @@ export function LocationPickerModal({
 
     setSelectedAddress(fullAddr);
     setSelectedCoords(coords);
+    setMapCenterCoords(coords);
     setLandmarkName(primary);
     setSearchQuery('');
     setPredictions([]);
-
-    // Calculate delta relative to initialCoords
-    const latDiff = coords.latitude - initialCoords.latitude;
-    const lngDiff = coords.longitude - initialCoords.longitude;
-
-    const targetX = (lngDiff / 0.005) * 100;
-    const targetY = -(latDiff / 0.005) * 100;
-    currentPanRef.current = { x: targetX, y: targetY };
+    currentPanRef.current = { x: 0, y: 0 };
 
     liftPin();
     Animated.parallel([
       Animated.spring(mapPanX, {
-        toValue: targetX,
+        toValue: 0,
         friction: 6,
         tension: 60,
         useNativeDriver: true,
       }),
       Animated.spring(mapPanY, {
-        toValue: targetY,
+        toValue: 0,
         friction: 6,
         tension: 60,
         useNativeDriver: true,
@@ -532,7 +581,7 @@ export function LocationPickerModal({
               {...panResponder.panHandlers}
               style={[styles.mapTouchSurface, { height: mapViewportHeight }]}
             >
-              {/* Pan-able Vector SVG Map Canvas underneath */}
+              {/* Pan-able Vector / Satellite Canvas underneath */}
               <Animated.View
                 style={[
                   styles.mapSvgCanvas,
@@ -549,59 +598,20 @@ export function LocationPickerModal({
                   onPress={handleMapTap}
                   style={styles.mapSvgTouchBox}
                 >
-                  <Svg width={SCREEN_WIDTH * 2.4} height={mapViewportHeight * 2.4}>
-                    <Defs>
-                      <LinearGradient id="mapBg" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <Stop offset="0%" stopColor="#F8FAFC" />
-                        <Stop offset="100%" stopColor="#F1F5F9" />
-                      </LinearGradient>
-                    </Defs>
-
-                    {/* Base Background */}
-                    <Rect width="100%" height="100%" fill="url(#mapBg)" />
-
-                    {/* Secondary Roads & Street Blocks */}
-                    <G stroke="#E2E8F0" strokeWidth="6" opacity="0.8">
-                      <Line x1="60" y1="0" x2="60" y2="1000" />
-                      <Line x1="160" y1="0" x2="160" y2="1000" />
-                      <Line x1="260" y1="0" x2="260" y2="1000" />
-                      <Line x1="360" y1="0" x2="360" y2="1000" />
-                      <Line x1="460" y1="0" x2="460" y2="1000" />
-                      <Line x1="560" y1="0" x2="560" y2="1000" />
-                      <Line x1="660" y1="0" x2="660" y2="1000" />
-                      <Line x1="760" y1="0" x2="760" y2="1000" />
-                      <Line x1="0" y1="70" x2="1000" y2="70" />
-                      <Line x1="0" y1="160" x2="1000" y2="160" />
-                      <Line x1="0" y1="250" x2="1000" y2="250" />
-                      <Line x1="0" y1="340" x2="1000" y2="340" />
-                      <Line x1="0" y1="430" x2="1000" y2="430" />
-                      <Line x1="0" y1="520" x2="1000" y2="520" />
-                    </G>
-
-                    {/* Primary Expressways & Ring Arterials */}
-                    <Path
-                      d="M 20 540 Q 240 380 420 280 T 900 120"
-                      fill="none"
-                      stroke="#FFFFFF"
-                      strokeWidth="12"
-                    />
-                    <Path
-                      d="M 40 40 Q 320 180 440 340 T 820 620"
-                      fill="none"
-                      stroke="#FFFFFF"
-                      strokeWidth="12"
-                    />
-
-                    {/* Logistics Hub Clusters */}
-                    <Rect x="120" y="220" width="80" height="60" rx="8" fill="#E9ECEF" />
-                    <Rect x="460" y="110" width="100" height="70" rx="8" fill="#E9ECEF" />
-                    <Rect x="300" y="380" width="90" height="65" rx="8" fill="#E9ECEF" />
-
-                    {/* Hub Marker Dots */}
-                    <Circle cx="400" cy="270" r="6" fill="#94A3B8" />
-                    <Circle cx="240" cy="180" r="6" fill="#94A3B8" />
-                    <Circle cx="580" cy="350" r="6" fill="#94A3B8" />
-                  </Svg>
+                  {/* Real Google Maps Satellite (Hybrid) or Roadmap Imagery */}
+                  <Image
+                    source={{
+                      uri: mapMode === 'satellite' ? satelliteMapUrl : streetMapUrl,
+                    }}
+                    style={{
+                      width: Math.max(SCREEN_WIDTH * 2.5, 960),
+                      height: Math.max(mapViewportHeight * 2.5, 800),
+                    }}
+                    contentFit="cover"
+                    transition={200}
+                    onLoadStart={() => setIsMapImageLoading(true)}
+                    onLoadEnd={() => setIsMapImageLoading(false)}
+                  />
                 </TouchableOpacity>
               </Animated.View>
 
@@ -612,8 +622,10 @@ export function LocationPickerModal({
                   styles.centerRadarPulse,
                   {
                     transform: [{ scale: pulseAnim }],
-                    borderColor: pinColor,
-                    backgroundColor: isPickup
+                    borderColor: mapMode === 'satellite' ? '#6EE787' : pinColor,
+                    backgroundColor: mapMode === 'satellite'
+                      ? 'rgba(110, 231, 135, 0.18)'
+                      : isPickup
                       ? 'rgba(15, 23, 42, 0.12)'
                       : 'rgba(51, 65, 85, 0.12)',
                   },
@@ -626,18 +638,19 @@ export function LocationPickerModal({
                 <Animated.View
                   style={[
                     styles.speechBubble,
+                    mapMode === 'satellite' && styles.speechBubbleSatellite,
                     {
                       transform: [{ translateY: pinBounceAnim }],
                     },
                   ]}
                 >
-                  <Text style={styles.speechBubbleText}>
+                  <Text style={[styles.speechBubbleText, mapMode === 'satellite' && styles.speechBubbleTextSatellite]}>
                     {isPickup
                       ? 'Your goods will be picked from here'
                       : 'Your goods will be dropped here'}
                   </Text>
                   {/* Downward triangle pointer */}
-                  <View style={styles.speechBubbleArrow} />
+                  <View style={[styles.speechBubbleArrow, mapMode === 'satellite' && styles.speechBubbleArrowSatellite]} />
                 </Animated.View>
 
                 {/* Animated Circular Pin Marker */}
@@ -652,7 +665,11 @@ export function LocationPickerModal({
                   <View
                     style={[
                       styles.pinHead,
-                      { backgroundColor: pinColor },
+                      {
+                        backgroundColor: mapMode === 'satellite' ? '#10B981' : pinColor,
+                        borderWidth: mapMode === 'satellite' ? 2 : 0,
+                        borderColor: WHITE,
+                      },
                     ]}
                   >
                     {isPickup ? (
@@ -665,7 +682,7 @@ export function LocationPickerModal({
                   <View
                     style={[
                       styles.pinStem,
-                      { borderTopColor: pinColor },
+                      { borderTopColor: mapMode === 'satellite' ? '#10B981' : pinColor },
                     ]}
                   />
                 </Animated.View>
@@ -681,8 +698,82 @@ export function LocationPickerModal({
                 />
               </View>
 
-              {/* Floating Map Controls: Recenter GPS & Fullscreen */}
+              {/* Map Mode Switcher (Street vs Satellite Toggle Pill) */}
+              <View style={styles.mapModeSwitcher}>
+                <TouchableOpacity
+                  style={[
+                    styles.mapModeBtn,
+                    mapMode === 'street' && styles.mapModeBtnActive,
+                  ]}
+                  onPress={() => setMapMode('street')}
+                  activeOpacity={0.82}
+                  accessibilityRole="button"
+                  accessibilityLabel="Switch to Street map view"
+                >
+                  <Layers
+                    size={13}
+                    color={mapMode === 'street' ? WHITE : colors.textPrimary}
+                  />
+                  <Text
+                    style={[
+                      styles.mapModeText,
+                      mapMode === 'street' && styles.mapModeTextActive,
+                    ]}
+                  >
+                    Street
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.mapModeBtn,
+                    mapMode === 'satellite' && styles.mapModeBtnActive,
+                  ]}
+                  onPress={() => {
+                    setMapMode('satellite');
+                    if (zoomLevel < 18) setZoomLevel(18);
+                  }}
+                  activeOpacity={0.82}
+                  accessibilityRole="button"
+                  accessibilityLabel="Switch to Satellite rooftop view"
+                >
+                  <Globe
+                    size={13}
+                    color={mapMode === 'satellite' ? WHITE : colors.textPrimary}
+                  />
+                  <Text
+                    style={[
+                      styles.mapModeText,
+                      mapMode === 'satellite' && styles.mapModeTextActive,
+                    ]}
+                  >
+                    Satellite
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Floating Map Controls: Zoom In, Zoom Out, Recenter GPS & Fullscreen */}
               <View style={styles.floatingControls}>
+                <TouchableOpacity
+                  style={styles.floatingControlBtn}
+                  onPress={handleZoomIn}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Zoom In map"
+                >
+                  <Plus size={18} color={colors.primaryDark} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.floatingControlBtn}
+                  onPress={handleZoomOut}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Zoom Out map"
+                >
+                  <Minus size={18} color={colors.primaryDark} />
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.floatingControlBtn}
                   onPress={handleRecenterGPS}
@@ -690,7 +781,7 @@ export function LocationPickerModal({
                   accessibilityRole="button"
                   accessibilityLabel="Recenter map to GPS"
                 >
-                  <LocateFixed size={20} color={colors.primaryDark} />
+                  <LocateFixed size={18} color={colors.primaryDark} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -701,19 +792,30 @@ export function LocationPickerModal({
                   accessibilityLabel={isFullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
                 >
                   {isFullscreen ? (
-                    <Minimize2 size={20} color={colors.textPrimary} />
+                    <Minimize2 size={18} color={colors.textPrimary} />
                   ) : (
-                    <Maximize2 size={20} color={colors.textPrimary} />
+                    <Maximize2 size={18} color={colors.textPrimary} />
                   )}
                 </TouchableOpacity>
               </View>
 
               {/* Hint Pill at Top of Map */}
               <View pointerEvents="none" style={styles.mapHintPill}>
-                <Crosshair size={12} color={colors.primaryDark} />
-                <Text style={styles.mapHintText}>
-                  Drag map to position pin directly on the doorstep
-                </Text>
+                {mapMode === 'satellite' ? (
+                  <>
+                    <Globe size={11} color="#10B981" />
+                    <Text style={styles.mapHintText}>
+                      Satellite HD • Zoom {zoomLevel}x • Align pin on rooftop or gate
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Crosshair size={11} color={colors.primaryDark} />
+                    <Text style={styles.mapHintText}>
+                      Street Map • Zoom {zoomLevel}x • Drag map to position pin
+                    </Text>
+                  </>
+                )}
               </View>
             </View>
           </View>
@@ -962,12 +1064,12 @@ const styles = StyleSheet.create({
   },
   mapSvgCanvas: {
     position: 'absolute',
-    left: -SCREEN_WIDTH * 0.7,
-    top: -MAP_HEIGHT_NORMAL * 0.7,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mapSvgTouchBox: {
-    width: SCREEN_WIDTH * 2.4,
-    height: MAP_HEIGHT_NORMAL * 2.4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centerRadarPulse: {
     position: 'absolute',
@@ -1042,34 +1144,78 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 14,
     top: 14,
-    gap: 10,
+    gap: 8,
     zIndex: 20,
   },
   floatingControlBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    ...shadows.button,
+    ...shadows.card,
+  },
+  mapModeSwitcher: {
+    position: 'absolute',
+    left: 14,
+    top: 14,
+    flexDirection: 'row',
+    backgroundColor: WHITE,
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 3,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    zIndex: 20,
+    ...shadows.floating,
+  },
+  mapModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  mapModeBtnActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  mapModeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  mapModeTextActive: {
+    color: WHITE,
+  },
+  speechBubbleSatellite: {
+    backgroundColor: '#0F172A',
+    borderColor: '#334155',
+  },
+  speechBubbleTextSatellite: {
+    color: WHITE,
+  },
+  speechBubbleArrowSatellite: {
+    borderTopColor: '#0F172A',
   },
   mapHintPill: {
     position: 'absolute',
-    top: 12,
+    bottom: 12,
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
     ...shadows.card,
+    zIndex: 15,
   },
   mapHintText: {
     fontSize: 10,

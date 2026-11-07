@@ -14,6 +14,7 @@ import {
   Car,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Clock,
   Compass,
@@ -29,6 +30,7 @@ import {
   Phone,
   Plus,
   RotateCcw,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
@@ -469,10 +471,22 @@ export default function CustomerHomeScreen() {
             contentFit="contain"
           />
         </View>
-        <View>
-          <Text style={styles.eyebrow}>ATARASHI LOGISTICS</Text>
-          <Text style={styles.title}>Customer Hub</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.locationSelector}
+          activeOpacity={0.8}
+          onPress={() => {
+            setPickerTarget('pickup');
+            setShowLocationPicker(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Change city or pickup location"
+        >
+          <Text style={styles.locationPretitle}>DELIVER IN</Text>
+          <View style={styles.locationRow}>
+            <Text style={styles.locationCity}>Bengaluru, KA</Text>
+            <ChevronDown size={14} color={colors.textPrimary} />
+          </View>
+        </TouchableOpacity>
       </View>
       <View style={styles.headerRightActions}>
         <Pressable
@@ -493,26 +507,217 @@ export default function CustomerHomeScreen() {
   const renderSendParcelTab = () => (
     <View style={styles.dispatchTabContainer}>
       {/* ========================================================= */}
-      {/* STAGE 1: HERO MAP & ROUTE SETUP                          */}
+      {/* STAGE 1: PORTER-GRADE DISCOVERY & SERVICE HOME            */}
       {/* ========================================================= */}
       {dispatchStep === 'route' && (
         <View style={styles.stageOneContainer}>
-          {/* Hero Tactile Vector Map with Route Polyline & Courier Radar */}
-          <View style={styles.heroMapContainer}>
-            <TactileMap
-              pickupCoords={pickupCoords}
-              dropoffCoords={dropoffCoords}
-              pickupLabel={pickupAddress.split(',')[0]}
-              dropoffLabel={dropoffAddress.split(',')[0]}
-              distanceKm={distanceKm}
-              durationMins={travelMins}
-              isEnRoute={false}
-              height={260}
-            />
+          {/* Quick "Where to?" Search Bar */}
+          <TouchableOpacity
+            style={styles.heroSearchBar}
+            activeOpacity={0.88}
+            onPress={() => setDispatchStep('vehicles')}
+            accessibilityRole="button"
+            accessibilityLabel="Where do you want to deliver?"
+          >
+            <View style={styles.searchIconTile}>
+              <Search size={18} color={colors.primaryDark} />
+            </View>
+            <View style={styles.searchCopy}>
+              <Text style={styles.searchPlaceholder}>Where do you want to deliver?</Text>
+              <Text style={styles.searchSubtext}>Enter drop location or pick on map</Text>
+            </View>
+            <View style={styles.searchArrowBtn}>
+              <ArrowRight size={15} color={colors.onDark} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Section Heading */}
+          <Text style={styles.sectionHeading}>SELECT SERVICE</Text>
+
+          {/* 2 Wheeler Card */}
+          <NeomorphCard
+            style={styles.heroServiceCard}
+            onPress={() => {
+              setServiceMode('parcel');
+              setSelectedVehicle('bike');
+              setDispatchStep('vehicles');
+            }}
+          >
+            <View style={styles.serviceCardLeft}>
+              <View style={styles.serviceIconContainer}>
+                <Bike size={24} color={colors.primaryDark} />
+              </View>
+              <View style={styles.serviceTextGroup}>
+                <View style={styles.serviceTitleRow}>
+                  <Text style={styles.serviceMainTitle}>2 Wheeler</Text>
+                  <View style={styles.serviceBadgeFast}>
+                    <Text style={styles.serviceBadgeFastText}>FASTEST</Text>
+                  </View>
+                </View>
+                <Text style={styles.serviceSubtitle}>
+                  Parcels up to 20 kg • Documents, food, boxed items
+                </Text>
+              </View>
+            </View>
+            <View style={styles.serviceCardRight}>
+              <Text style={styles.serviceFareFrom}>From ₹35</Text>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </View>
+          </NeomorphCard>
+
+          {/* Freight Trucks Card */}
+          <NeomorphCard
+            style={styles.heroServiceCard}
+            onPress={() => {
+              setServiceMode('freight');
+              setSelectedVehicle('car');
+              setDispatchStep('vehicles');
+            }}
+          >
+            <View style={styles.serviceCardLeft}>
+              <View style={styles.serviceIconContainer}>
+                <Truck size={24} color={colors.primaryDark} />
+              </View>
+              <View style={styles.serviceTextGroup}>
+                <View style={styles.serviceTitleRow}>
+                  <Text style={styles.serviceMainTitle}>Trucks & Freight</Text>
+                  <View style={styles.serviceBadgeCargo}>
+                    <Text style={styles.serviceBadgeCargoText}>BULK CARGO</Text>
+                  </View>
+                </View>
+                <Text style={styles.serviceSubtitle}>
+                  Tata Ace, 8ft Pickup, 3W • Cargo up to 750 kg
+                </Text>
+              </View>
+            </View>
+            <View style={styles.serviceCardRight}>
+              <Text style={styles.serviceFareFrom}>From ₹150</Text>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </View>
+          </NeomorphCard>
+
+          {/* House Shifting (Packers & Movers) Card */}
+          <NeomorphCard
+            style={styles.heroServiceCard}
+            onPress={() => setShowPackersMovers(true)}
+          >
+            <View style={styles.serviceCardLeft}>
+              <View style={styles.serviceIconContainer}>
+                <Building2 size={24} color={colors.primaryDark} />
+              </View>
+              <View style={styles.serviceTextGroup}>
+                <View style={styles.serviceTitleRow}>
+                  <Text style={styles.serviceMainTitle}>House Shifting</Text>
+                  <View style={styles.serviceBadgeRelo}>
+                    <Text style={styles.serviceBadgeReloText}>FULL SERVICE</Text>
+                  </View>
+                </View>
+                <Text style={styles.serviceSubtitle}>
+                  Dedicated truck, trained loading crew & packing
+                </Text>
+              </View>
+            </View>
+            <View style={styles.serviceCardRight}>
+              <Text style={styles.serviceFareFrom}>Quote</Text>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </View>
+          </NeomorphCard>
+
+          {/* Quick Saved Destinations */}
+          <View style={styles.savedSection}>
+            <Text style={styles.sectionHeadingSubtle}>RECENT DESTINATIONS</Text>
+            <View style={styles.savedPlacesRow}>
+              <TouchableOpacity
+                style={styles.savedPlaceTile}
+                activeOpacity={0.82}
+                onPress={() => {
+                  setDropoffAddress('Flat 402, Green Glen Heights, Koramangala 4th Block');
+                  setDropoffCoords({ latitude: 12.9352, longitude: 77.6245 });
+                  setDispatchStep('vehicles');
+                }}
+              >
+                <View style={styles.savedTileIcon}>
+                  <Home size={14} color={colors.primaryDark} />
+                </View>
+                <View style={styles.savedTileCopy}>
+                  <Text style={styles.savedTileTitle}>Home</Text>
+                  <Text style={styles.savedTileSub} numberOfLines={1}>Koramangala</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.savedPlaceTile}
+                activeOpacity={0.82}
+                onPress={() => {
+                  setDropoffAddress('WeWork Galaxy, 43 Residency Rd, Shanthala Nagar');
+                  setDropoffCoords({ latitude: 12.9716, longitude: 77.5946 });
+                  setDispatchStep('vehicles');
+                }}
+              >
+                <View style={styles.savedTileIcon}>
+                  <Building2 size={14} color={colors.primaryDark} />
+                </View>
+                <View style={styles.savedTileCopy}>
+                  <Text style={styles.savedTileTitle}>Office</Text>
+                  <Text style={styles.savedTileSub} numberOfLines={1}>Residency Rd</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.savedPlaceTile}
+                activeOpacity={0.82}
+                onPress={() => {
+                  setDropoffAddress('Atarashi Logistics Peenya Hub, Industrial Area');
+                  setDropoffCoords({ latitude: 13.0285, longitude: 77.5197 });
+                  setDispatchStep('vehicles');
+                }}
+              >
+                <View style={styles.savedTileIcon}>
+                  <Package size={14} color={colors.primaryDark} />
+                </View>
+                <View style={styles.savedTileCopy}>
+                  <Text style={styles.savedTileTitle}>Warehouse</Text>
+                  <Text style={styles.savedTileSub} numberOfLines={1}>Peenya</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Clean Elevated Route Configuration Card */}
-          <NeomorphCard style={styles.cleanRouteCard}>
+          {/* Trust Assurance Banner */}
+          <View style={styles.trustBanner}>
+            <ShieldCheck size={16} color="#10B981" />
+            <Text style={styles.trustText}>
+              100% Electric & Eco Fleet • Direct GST Invoices • Live GPS
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* ========================================================= */}
+      {/* STAGE 2: VEHICLE FLEET & PRICING DRAWER                   */}
+      {/* ========================================================= */}
+      {dispatchStep === 'vehicles' && (
+        <View style={styles.stageTwoContainer}>
+          {/* Header Back Navigation */}
+          <View style={styles.subpageHeader}>
+            <TouchableOpacity
+              style={styles.backIconButton}
+              onPress={() => setDispatchStep('route')}
+              accessibilityRole="button"
+              accessibilityLabel="Back to home"
+            >
+              <ArrowLeft size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <View style={styles.subpageHeaderCopy}>
+              <Text style={styles.subpageTitle}>Select Vehicle</Text>
+              <Text style={styles.subpageSubtitle} numberOfLines={1}>
+                {pickupAddress.split(',')[0]} → {dropoffAddress.split(',')[0]} • {distanceKm} km
+              </Text>
+            </View>
+          </View>
+
+          {/* Route Configuration Card */}
+          <NeomorphCard style={styles.stageTwoRouteCard}>
             {/* Pickup Stop Row */}
             <TouchableOpacity
               activeOpacity={0.8}
@@ -523,7 +728,7 @@ export default function CustomerHomeScreen() {
               style={styles.cleanStopRow}
             >
               <View style={styles.cleanStopIconBox}>
-                <ArrowUp size={16} color={colors.primaryDark} />
+                <ArrowUp size={14} color={colors.primaryDark} />
               </View>
               <View style={styles.cleanStopCopy}>
                 <Text style={styles.cleanStopLabel}>PICKUP POINT</Text>
@@ -532,8 +737,8 @@ export default function CustomerHomeScreen() {
                 </Text>
               </View>
               <View style={styles.cleanPinpointBtn}>
-                <Crosshair size={13} color={colors.textSecondary} />
-                <Text style={styles.cleanPinpointText}>Pinpoint</Text>
+                <Crosshair size={12} color={colors.textSecondary} />
+                <Text style={styles.cleanPinpointText}>Change</Text>
               </View>
             </TouchableOpacity>
 
@@ -567,7 +772,7 @@ export default function CustomerHomeScreen() {
               style={styles.cleanStopRow}
             >
               <View style={[styles.cleanStopIconBox, styles.cleanStopIconDropoff]}>
-                <ArrowDown size={16} color="#DC2626" />
+                <ArrowDown size={14} color="#DC2626" />
               </View>
               <View style={styles.cleanStopCopy}>
                 <Text style={styles.cleanStopLabel}>DELIVERY DESTINATION</Text>
@@ -576,85 +781,11 @@ export default function CustomerHomeScreen() {
                 </Text>
               </View>
               <View style={styles.cleanPinpointBtn}>
-                <Crosshair size={13} color={colors.textSecondary} />
-                <Text style={styles.cleanPinpointText}>Pinpoint</Text>
+                <Crosshair size={12} color={colors.textSecondary} />
+                <Text style={styles.cleanPinpointText}>Change</Text>
               </View>
             </TouchableOpacity>
-
-            {/* Quick-Access Saved Address Chips */}
-            <View style={styles.savedPlacesStrip}>
-              <TouchableOpacity
-                style={styles.savedPlacePill}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setDropoffAddress('Flat 402, Green Glen Heights, Koramangala 4th Block');
-                  setDropoffCoords({ latitude: 12.9352, longitude: 77.6245 });
-                }}
-              >
-                <Home size={12} color={colors.primaryDark} />
-                <Text style={styles.savedPlacePillText}>Home</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.savedPlacePill}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setDropoffAddress('WeWork Galaxy, 43 Residency Rd, Shanthala Nagar');
-                  setDropoffCoords({ latitude: 12.9716, longitude: 77.5946 });
-                }}
-              >
-                <Building2 size={12} color={colors.primaryDark} />
-                <Text style={styles.savedPlacePillText}>Office</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.savedPlacePill}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setDropoffAddress('Atarashi Logistics Peenya Hub, Industrial Area');
-                  setDropoffCoords({ latitude: 13.0285, longitude: 77.5197 });
-                }}
-              >
-                <Package size={12} color={colors.primaryDark} />
-                <Text style={styles.savedPlacePillText}>Warehouse</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Stage 1 CTA: Select Vehicle & Rates */}
-            <PillButton
-              title="Select Vehicle & View Rates"
-              variant="dark"
-              size="lg"
-              style={styles.selectVehicleBtn}
-              icon={<ArrowRight size={18} color={colors.onDark} />}
-              onPress={() => setDispatchStep('vehicles')}
-            />
           </NeomorphCard>
-        </View>
-      )}
-
-      {/* ========================================================= */}
-      {/* STAGE 2: VEHICLE FLEET & PRICING DRAWER                   */}
-      {/* ========================================================= */}
-      {dispatchStep === 'vehicles' && (
-        <View style={styles.stageTwoContainer}>
-          {/* Header Back Navigation */}
-          <View style={styles.subpageHeader}>
-            <TouchableOpacity
-              style={styles.backIconButton}
-              onPress={() => setDispatchStep('route')}
-              accessibilityRole="button"
-              accessibilityLabel="Back to route setup"
-            >
-              <ArrowLeft size={20} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={styles.subpageHeaderCopy}>
-              <Text style={styles.subpageTitle}>Select Vehicle</Text>
-              <Text style={styles.subpageSubtitle} numberOfLines={1}>
-                {pickupAddress.split(',')[0]} → {dropoffAddress.split(',')[0]} • {distanceKm} km
-              </Text>
-            </View>
-          </View>
 
           {/* Service Mode Selector */}
           <View style={styles.serviceModeContainer}>
@@ -2256,17 +2387,25 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
   },
-  eyebrow: {
-    color: colors.primaryDark,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.4,
+  locationSelector: {
+    justifyContent: 'center',
   },
-  title: {
-    color: colors.textPrimary,
-    fontSize: sizes.xl,
+  locationPretitle: {
+    fontSize: 9,
     fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 1.2,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: 1,
+  },
+  locationCity: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: colors.textPrimary,
   },
   headerRightActions: {
     flexDirection: 'row',
@@ -2742,7 +2881,241 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stageOneContainer: {
+    gap: 10,
+  },
+
+  // Hero Search Bar
+  heroSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...theme.shadows.card,
+  },
+  searchIconTile: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchCopy: {
+    flex: 1,
+  },
+  searchPlaceholder: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  searchSubtext: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  searchArrowBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Section Headings
+  sectionHeading: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 1.2,
+    marginTop: 6,
+    marginBottom: 2,
+    paddingHorizontal: 4,
+  },
+  sectionHeadingSubtle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 1.1,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+
+  // Hero Service Cards
+  heroServiceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  serviceCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
+    flex: 1,
+  },
+  serviceIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceTextGroup: {
+    flex: 1,
+  },
+  serviceTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 3,
+  },
+  serviceMainTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: colors.textPrimary,
+  },
+  serviceBadgeFast: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  serviceBadgeFastText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#059669',
+    letterSpacing: 0.5,
+  },
+  serviceBadgeCargo: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  serviceBadgeCargoText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#475569',
+    letterSpacing: 0.5,
+  },
+  serviceBadgeRelo: {
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  serviceBadgeReloText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#D97706',
+    letterSpacing: 0.5,
+  },
+  serviceSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    lineHeight: 15,
+  },
+  serviceCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 8,
+  },
+  serviceFareFrom: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primaryDark,
+  },
+
+  // Saved Section
+  savedSection: {
+    marginTop: 6,
+  },
+  savedPlacesRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  savedPlaceTile: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...theme.shadows.card,
+  },
+  savedTileIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  savedTileCopy: {
+    flex: 1,
+  },
+  savedTileTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  savedTileSub: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+
+  // Trust Banner
+  trustBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.surface,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  trustText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+
+  stageTwoRouteCard: {
+    padding: 14,
+    borderRadius: 18,
+    marginBottom: 12,
   },
   heroMapContainer: {
     borderRadius: 20,
