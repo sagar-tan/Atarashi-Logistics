@@ -983,3 +983,19 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - `cust_screen_satellite_zoom19.png`: Zoomed to 19x high resolution.
     - `cust_screen_drag_success.png`: Panned to Intermediate Ring Rd with zero whitespace gaps and live reverse geocoded address.
     - `cust_screen_after_confirm.png`: Confirmed location applied to vehicle selection card and recalculated fare to ₹200.00.
+
+---
+
+## 2026-11-07 07:55 IST
+
+### Android Studio Pixel 9 Emulator Clean Restart & GPU Host Acceleration
+- **Request:** "can you restart the emulator its very laggy smh"
+- **Goal:** Terminate sluggish emulator process and boot up a fresh, hardware-accelerated instance of Pixel 9 (`emulator-5554`) with host GPU rendering enabled.
+- **Changes:**
+  - Gracefully terminated `emulator-5554` via `adb -s emulator-5554 emu kill`.
+  - Re-launched `Pixel_9` with `$env:ANDROID_HOME` and `-gpu host` acceleration for 60fps rendering without UI stutter.
+  - Verified boot completion via `adb -s emulator-5554 shell getprop sys.boot_completed` -> `1`.
+  - Re-established ADB reverse port forwarding: `adb -s emulator-5554 reverse tcp:8081 tcp:8081`.
+  - Re-launched Customer app (`com.atarashi.customer`) and verified clean home screen bundle reload.
+- **Verification**:
+  - Captured verified screenshot: `cust_emulator_restarted_ready.png` showing clean home screen with active Metro bundle loaded.
