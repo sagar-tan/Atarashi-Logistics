@@ -5,6 +5,15 @@ description: Standard operational procedures and automated testing commands for 
 
 # Mobile Development, Emulator Testing & Device Runbook
 
+> [!CRITICAL]
+> ## STRICT DEVICE TARGET PROTOCOL
+> 1. **Autonomous Development & Testing -> EMULATOR ONLY**:
+>    - While implementing features, making edits, fixing bugs, and verifying UI, **ONLY target the Android Studio Emulator** (`emulator-5554` / `Pixel_9`).
+>    - **NEVER** push, deploy, or install development changes to a connected physical device during autonomous coding iterations.
+>    - Always qualify ADB commands with `-s emulator-5554` to ensure traffic never spills onto attached hardware.
+> 2. **Physical Device Installation -> ONLY ON EXPLICIT USER REQUEST**:
+>    - Install onto the physical phone via USB debugging **ONLY AND STRICTLY when the user asks to test it themselves** (e.g. *"install on my phone"*, *"install via USB debugging"*, *"let me test it"*).
+
 ## 1. Overview & Scope
 This skill provides the exact commands, automated testing workflows, and troubleshooting procedures for running and testing the **Atarashi Logistics** Expo React Native mobile applications:
 - **Customer App**: `@atarashi/customer` (`apps/customer`), package `com.atarashi.customer`
@@ -32,49 +41,68 @@ adb devices -l
 > ```
 > Wait ~15 seconds until `adb shell getprop sys.boot_completed` returns `1`.
 
-If multiple devices are attached, use `-s <device_id>` (e.g. `adb -s emulator-5554 ...`).
+When both emulator and physical device are connected, **always specify `-s emulator-5554`** for all development operations.
 
-### Step 2: Set Up Reverse Port Forwarding
-Ensure the device/emulator can communicate with Metro on port 8081:
+### Step 2: Set Up Reverse Port Forwarding (Emulator)
+Ensure the emulator can communicate with Metro on port 8081:
 ```powershell
-adb reverse tcp:8081 tcp:8081
-adb reverse --list
+adb -s emulator-5554 reverse tcp:8081 tcp:8081
+adb -s emulator-5554 reverse --list
 ```
 
-### Step 3: Native Build & Run on Target Device
-Run either app using Expo or Gradle:
+### Step 3: Development Loop on Android Studio Emulator (Default & Exclusive for Dev)
+Run or install the debug build onto the emulator:
 
 **For Customer App (`apps/customer`):**
 ```powershell
-cd apps\customer
-npx expo run:android
-# Or via Gradle directly:
-cd android
-.\gradlew.bat installDebug
+cd apps\customer\android
+.\gradlew.bat installDebug -PreactNativeArchitectures=x86_64
 cd ..\..\..
 ```
 
 **For Driver App (`apps/driver`):**
 ```powershell
-cd apps\driver
-npx expo run:android
-# Or via Gradle directly:
-cd android
-.\gradlew.bat installDebug
+cd apps\driver\android
+.\gradlew.bat installDebug -PreactNativeArchitectures=x86_64
 cd ..\..\..
 ```
 
-### Step 4: Wake & Launch MainActivity
-Launch the desired app:
+### Step 4: Physical Device Installation via USB Debugging (ON-DEMAND ONLY)
+> [!NOTE]
+> Execute this step **ONLY** when the user explicitly asks: *"install on my phone"*, *"test it myself"*, or *"install via USB"*.
+
+1. Identify the physical device serial from `adb devices`:
+   ```powershell
+   adb devices -l
+   # Example: RZGL304MCMB device product:pa1qxins model:SM_S931B
+   ```
+2. Build standalone release or debug APK:
+   - For standalone APK (recommended for testing on phone without Metro):
+     ```powershell
+     cd apps\customer\android
+     .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
+     cd ..\..\..
+     ```
+3. Install onto the physical device using its exact serial:
+   ```powershell
+   adb -s <physical_serial> install -r apps\customer\android\app\build\outputs\apk\release\app-release.apk
+   ```
+4. Launch app on the physical device:
+   ```powershell
+   adb -s <physical_serial> shell am start -n com.atarashi.customer/.MainActivity
+   ```
+
+### Step 5: Wake & Launch MainActivity on Emulator (Dev Verification)
+Launch on emulator:
 
 ```powershell
 # Customer App:
-adb shell am force-stop com.atarashi.customer
-adb shell am start -n com.atarashi.customer/.MainActivity
+adb -s emulator-5554 shell am force-stop com.atarashi.customer
+adb -s emulator-5554 shell am start -n com.atarashi.customer/.MainActivity
 
 # Driver App:
-adb shell am force-stop com.atarashi.driver
-adb shell am start -n com.atarashi.driver/.MainActivity
+adb -s emulator-5554 shell am force-stop com.atarashi.driver
+adb -s emulator-5554 shell am start -n com.atarashi.driver/.MainActivity
 ```
 
 ---

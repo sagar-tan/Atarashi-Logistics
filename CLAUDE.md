@@ -86,6 +86,7 @@ For Expo packages, always use `npx expo install <pkg>` so versions match SDK 58.
 - Expo native config goes in `app.json` and config plugins. Never hand-edit `ios/` or `android/`.
 - Expo docs: https://docs.expo.dev/llms.txt. Check the matching `expo` major version before using any Expo API, since SDK changes are frequent.
 - Run lint and typecheck before calling a task done.
+- **Emulator vs Device Target Protocol:** For all development iterations, edits, testing, and UI verification, **strictly use the Android Studio emulator** (`Pixel_9` / `emulator-5554`). Only install or deploy to a connected physical device via USB debugging when the user explicitly requests to test it themselves.
 - **Change log (non-negotiable):** every step is recorded in `NEW_Features.md` at the repo root. Each entry has a timestamp (IST), the request, the goal, and the changes made. Append it as part of the step, never skip it.
 
 ## Known gaps and open questions

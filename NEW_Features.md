@@ -1088,3 +1088,21 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - Verified Stage 2 vehicle drawer and paise pricing calculation.
 
 
+---
+
+## 2026-11-07 17:14 IST
+
+### Enforce Emulator-Only Development & On-Demand Physical USB Debugging Protocol
+- **Request:** "put this in the skill or whatever, to actually only use emulator in order to perform changes and edits, and install teh app via usb debugging when i ask to test it myself."
+- **Goal:** Codify a strict boundary between autonomous agent development/testing (strictly on Android Studio Emulator) and physical device deployment via USB debugging (strictly executed only upon explicit user request).
+- **Changes Applied**:
+  - **`.agents/rules/rules.md`**:
+    - Updated Section 5 (*Mobile Native & Emulator Testing Protocol*) with a mandatory **Device Target Isolation** rule:
+      - All development, code changes, edits, ADB interactions, and UI layout verifications must strictly target the Android Studio Emulator (`emulator-5554` / `Pixel_9`).
+      - Agents must explicitly pass `-s emulator-5554` to ADB and Gradle tasks to avoid targeting attached hardware.
+      - Physical device installation via USB debugging is strictly reserved for when the user asks to test it themselves.
+  - **`.agents/skills/mobile-dev-and-deployment/SKILL.md`**:
+    - Added a prominent critical policy alert at the top of the skill specifying the emulator-only development boundary.
+    - Updated Section 2 to split out autonomous development loops on emulator (`emulator-5554`) from on-demand physical USB device installation (`adb -s <device_id> install -r <apk>`) when requested by the user.
+  - **`CLAUDE.md`**:
+    - Added **Emulator vs Device Target Protocol** under *Conventions and rules*.

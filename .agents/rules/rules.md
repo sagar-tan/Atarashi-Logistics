@@ -54,11 +54,18 @@ Atarashi Logistics is an India-first parcel delivery platform modeled on a ride-
 1. **Continuous Native Generation**:
    - Never hand-edit files in `apps/*/android/` or `apps/*/ios/` directly unless strictly necessary. Configure native behavior via `app.json` and Expo config plugins.
    - Native dependencies must be installed with `npx expo install <package>` to guarantee compatibility with Expo SDK 58.
-2. **Android Studio Emulator & Physical Device Testing**:
-   - Test execution is conducted via ADB (`adb devices`, `adb reverse tcp:8081 tcp:8081`).
-   - Interact with the app autonomously using `adb shell input tap/swipe/text/keyevent` and UI layout inspection using `adb shell uiautomator dump`.
-   - Visually verify screen rendering using `adb exec-out screencap -p > screen.png` and multimodal inspection.
-3. **Verification**:
+2. **Device Target Isolation (Strict Rule)**:
+   - **Autonomous Dev & Edits Exclusively on Android Studio Emulator**:
+     - When developing, making code changes, hot-reloading, or executing automated ADB/UI tests, the agent **MUST EXCLUSIVELY TARGET THE ANDROID STUDIO EMULATOR** (e.g., `emulator-5554` / `Pixel_9`).
+     - Always explicitly pass `-s emulator-5554` (or the active emulator ID) to all ADB and Gradle commands when a physical device is also connected.
+     - **NEVER** build, install, or push development iterations to the user's physical phone during autonomous work.
+   - **Physical Device via USB Debugging (User Request ONLY)**:
+     - Install and deploy the app onto the physical phone via USB debugging **ONLY AND STRICTLY when the user explicitly asks to test it themselves** (e.g., *"install on my phone"*, *"install via USB debugging"*, *"let me test it myself"*).
+3. **Automated Emulator Verification**:
+   - Test execution on emulator: `adb -s emulator-5554 reverse tcp:8081 tcp:8081`.
+   - Interact autonomously on emulator: `adb -s emulator-5554 shell input tap/swipe/text/keyevent` and UI inspection via `adb -s emulator-5554 shell uiautomator dump`.
+   - Visually verify screen rendering: `adb -s emulator-5554 exec-out screencap -p > screen.png` and multimodal inspection.
+4. **Verification**:
    - Always run `npm run typecheck` across workspaces before declaring a task complete.
 
 ---

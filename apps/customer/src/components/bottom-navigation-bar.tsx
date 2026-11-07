@@ -254,16 +254,19 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
+    overflow: 'hidden',
     position: 'relative',
   },
   iconCircleActive: {
     backgroundColor: colors.surfaceSubtle,
+    borderRadius: 9999,
+    overflow: 'hidden',
   },
   badgeDot: {
     position: 'absolute',
