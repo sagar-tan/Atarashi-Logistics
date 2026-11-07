@@ -32,6 +32,15 @@ export interface WalletOrderRecord {
   created_at: string;
 }
 
+export interface WalletLedgerEntry {
+  id: string;
+  user_id: string;
+  amount_paise: number;
+  entry_type: 'credit' | 'debit' | 'refund' | 'commission' | 'settlement';
+  idempotency_key: string;
+  created_at: string;
+}
+
 export interface TransitionResult {
   success: boolean;
   booking?: BookingRecord;
@@ -43,6 +52,7 @@ export class MemoryStore {
   private bookings: Map<string, BookingRecord> = new Map();
   private driverStatuses: Map<string, DriverStatusRecord> = new Map();
   private walletOrders: Map<string, WalletOrderRecord> = new Map();
+  private walletLedger: Map<string, WalletLedgerEntry> = new Map();
 
   /**
    * Generates a 4-digit numeric code (e.g., '4821')
@@ -271,10 +281,32 @@ export class MemoryStore {
     return this.walletOrders.get(orderId);
   }
 
+  public topupWallet(
+    userId: string,
+    amountPaise: number,
+    idempotencyKey: string = `topup_${crypto.randomUUID()}`
+  ): WalletLedgerEntry {
+    const entry: WalletLedgerEntry = {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      amount_paise: amountPaise,
+      entry_type: 'credit',
+      idempotency_key: idempotencyKey,
+      created_at: new Date().toISOString(),
+    };
+    this.walletLedger.set(entry.id, entry);
+    return entry;
+  }
+
+  public getWalletEntries(userId: string): WalletLedgerEntry[] {
+    return Array.from(this.walletLedger.values()).filter((e) => e.user_id === userId);
+  }
+
   public reset(): void {
     this.bookings.clear();
     this.driverStatuses.clear();
     this.walletOrders.clear();
+    this.walletLedger.clear();
   }
 }
 

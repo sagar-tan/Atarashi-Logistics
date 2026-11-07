@@ -14,8 +14,36 @@ const verifyPaymentSchema = z.object({
   razorpay_signature: z.string().min(1),
 });
 
+const topupSchema = z.object({
+  amount_paise: z.number().int().positive(),
+  idempotency_key: z.string().optional(),
+});
+
 export async function walletRoutes(app: FastifyInstance) {
   const store = app.store ?? defaultStore;
+
+  // POST /v1/wallet/topup
+  app.post(
+    '/v1/wallet/topup',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parseResult = topupSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid topup payload',
+          details: parseResult.error.issues,
+        });
+      }
+
+      const { amount_paise, idempotency_key } = parseResult.data;
+      const userId = request.user?.id || 'guest-user';
+      const entry = store.topupWallet(userId, amount_paise, idempotency_key);
+
+      return reply.status(200).send({
+        success: true,
+        entry,
+      });
+    }
+  );
 
   // POST /v1/wallet/orders
   app.post(

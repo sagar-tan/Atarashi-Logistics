@@ -8,6 +8,10 @@ test('Gateway API Integration Suite', async (t) => {
   const store = new MemoryStore();
   const app = buildApp({ store, logger: false });
 
+  // Auth tokens for test requests
+  const customerAuth = { authorization: 'Bearer test-jwt-customer-blr' };
+  const driverAuth = { authorization: 'Bearer test-token-driver', 'x-driver-id': 'driver-blr-1' };
+
   // Baseline coordinates in Bengaluru (Indiranagar to Koramangala)
   const pickupCoords = { latitude: 12.9716, longitude: 77.5946 };
   const dropoffCoords = { latitude: 12.9352, longitude: 77.6245 };
@@ -28,7 +32,7 @@ test('Gateway API Integration Suite', async (t) => {
     assert.equal(body.version, '0.1.0');
   });
 
-  await t.test('POST /v1/pricing/quote calculates Haversine fare in integer paise', async () => {
+  await t.test('POST /v1/pricing/quote calculates Haversine fare in integer paise (Public Endpoint)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/pricing/quote',
@@ -94,14 +98,50 @@ test('Gateway API Integration Suite', async (t) => {
     assert.equal(invalidVehicle.statusCode, 400);
   });
 
+  // Server-Authoritative Mutation Authentication Tests (HTTP 401)
+  await t.test('Mutating endpoints reject unauthenticated requests with HTTP 401', async () => {
+    const unauthBooking = await app.inject({
+      method: 'POST',
+      url: '/v1/bookings',
+      payload: {
+        pickup: { coordinates: pickupCoords, address: 'Indiranagar' },
+        dropoff: { coordinates: dropoffCoords, address: 'Koramangala' },
+        vehicle_type: 'bike',
+        parcel_size: 'small',
+        sender_name: 'Test',
+        sender_phone: '+919999999999',
+        recipient_name: 'Test 2',
+        recipient_phone: '+918888888888',
+        payment_method: 'wallet',
+      },
+    });
+    assert.equal(unauthBooking.statusCode, 401);
+    assert.equal(unauthBooking.json().error, 'Unauthorized');
+
+    const unauthDriver = await app.inject({
+      method: 'POST',
+      url: '/v1/driver/status',
+      payload: { is_online: true, location: pickupCoords, heading: 0 },
+    });
+    assert.equal(unauthDriver.statusCode, 401);
+
+    const unauthWallet = await app.inject({
+      method: 'POST',
+      url: '/v1/wallet/orders',
+      payload: { amount_paise: 50000 },
+    });
+    assert.equal(unauthWallet.statusCode, 401);
+  });
+
   let createdBookingId = '';
   let pickupOtp = '';
   let deliveryPin = '';
 
-  await t.test('POST /v1/bookings creates booking with OTP, PIN, and calculated fare', async () => {
+  await t.test('POST /v1/bookings creates booking with OTP, PIN, and calculated fare with JWT Auth', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/bookings',
+      headers: customerAuth,
       payload: {
         pickup: { coordinates: pickupCoords, address: 'Indiranagar 100ft Road' },
         dropoff: { coordinates: dropoffCoords, address: 'Koramangala 4th Block' },
@@ -149,11 +189,11 @@ test('Gateway API Integration Suite', async (t) => {
     assert.equal(notFound.statusCode, 404);
   });
 
-  await t.test('POST /v1/driver/status updates driver location and availability', async () => {
+  await t.test('POST /v1/driver/status updates driver location and availability with Auth', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/driver/status',
-      headers: { 'x-driver-id': 'driver-blr-1' },
+      headers: driverAuth,
       payload: {
         is_online: true,
         location: pickupCoords,
@@ -169,11 +209,11 @@ test('Gateway API Integration Suite', async (t) => {
     assert.equal(body.heading, 90);
   });
 
-  await t.test('POST /v1/driver/bookings/:id/accept assigns driver to pending booking', async () => {
+  await t.test('POST /v1/driver/bookings/:id/accept assigns driver to pending booking with Auth', async () => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/accept`,
-      headers: { 'x-driver-id': 'driver-blr-1' },
+      headers: driverAuth,
     });
 
     assert.equal(res.statusCode, 200);
@@ -186,16 +226,17 @@ test('Gateway API Integration Suite', async (t) => {
     const reAccept = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/accept`,
-      headers: { 'x-driver-id': 'driver-blr-2' },
+      headers: { ...driverAuth, 'x-driver-id': 'driver-blr-2' },
     });
     assert.equal(reAccept.statusCode, 400);
   });
 
-  await t.test('POST /v1/driver/bookings/:id/transition enforces OTP on pickup', async () => {
+  await t.test('POST /v1/driver/bookings/:id/transition enforces OTP on pickup with Auth', async () => {
     // 1. Wrong OTP rejected
     const wrongOtpRes = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'picked_up',
         code: '0000',
@@ -208,6 +249,7 @@ test('Gateway API Integration Suite', async (t) => {
     const missingOtpRes = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'picked_up',
       },
@@ -218,6 +260,7 @@ test('Gateway API Integration Suite', async (t) => {
     const correctOtpRes = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'picked_up',
         code: pickupOtp,
@@ -231,6 +274,7 @@ test('Gateway API Integration Suite', async (t) => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'in_transit',
       },
@@ -244,6 +288,7 @@ test('Gateway API Integration Suite', async (t) => {
     const wrongPinRes = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'completed',
         code: '9999',
@@ -256,6 +301,7 @@ test('Gateway API Integration Suite', async (t) => {
     const correctPinRes = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'completed',
         code: deliveryPin,
@@ -272,6 +318,7 @@ test('Gateway API Integration Suite', async (t) => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/driver/bookings/${createdBookingId}/transition`,
+      headers: driverAuth,
       payload: {
         status: 'picked_up',
         code: pickupOtp,
@@ -284,7 +331,7 @@ test('Gateway API Integration Suite', async (t) => {
     const res = await app.inject({
       method: 'GET',
       url: '/v1/driver/earnings',
-      headers: { 'x-driver-id': 'driver-blr-1' },
+      headers: driverAuth,
     });
 
     assert.equal(res.statusCode, 200);
@@ -295,10 +342,11 @@ test('Gateway API Integration Suite', async (t) => {
     assert.equal(body.currency, 'INR');
   });
 
-  await t.test('POST /v1/wallet/orders creates Razorpay order in paise', async () => {
+  await t.test('POST /v1/wallet/orders creates Razorpay order in paise with Auth', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/wallet/orders',
+      headers: customerAuth,
       payload: {
         amount_paise: 25000, // ₹250.00
       },
@@ -315,12 +363,31 @@ test('Gateway API Integration Suite', async (t) => {
     const floatRes = await app.inject({
       method: 'POST',
       url: '/v1/wallet/orders',
+      headers: customerAuth,
       payload: { amount_paise: 250.5 },
     });
     assert.equal(floatRes.statusCode, 400);
   });
 
-  await t.test('POST /v1/wallet/verify validates HMAC-SHA256 signature', async () => {
+  await t.test('POST /v1/wallet/topup credits wallet ledger in integer paise with Auth', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/wallet/topup',
+      headers: customerAuth,
+      payload: {
+        amount_paise: 100000, // ₹1,000.00 = 100000 paise
+      },
+    });
+
+    assert.equal(res.statusCode, 200);
+    const body = res.json();
+    assert.equal(body.success, true);
+    assert.equal(body.entry.amount_paise, 100000);
+    assert.equal(body.entry.entry_type, 'credit');
+    assert.equal(body.entry.user_id, 'customer-blr');
+  });
+
+  await t.test('POST /v1/wallet/verify validates HMAC-SHA256 signature with Auth', async () => {
     const orderId = 'order_test_12345';
     const paymentId = 'pay_test_67890';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || 'test_secret_key';
@@ -334,6 +401,7 @@ test('Gateway API Integration Suite', async (t) => {
     const validRes = await app.inject({
       method: 'POST',
       url: '/v1/wallet/verify',
+      headers: customerAuth,
       payload: {
         razorpay_order_id: orderId,
         razorpay_payment_id: paymentId,
@@ -350,6 +418,7 @@ test('Gateway API Integration Suite', async (t) => {
     const invalidRes = await app.inject({
       method: 'POST',
       url: '/v1/wallet/verify',
+      headers: customerAuth,
       payload: {
         razorpay_order_id: orderId,
         razorpay_payment_id: paymentId,

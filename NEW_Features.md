@@ -1131,3 +1131,74 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
 - **Verification**:
   - `npm run typecheck`: Passed with **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
 
+
+
+---
+
+## 2026-11-07 19:48 IST
+
+### Production Auth Initialization: Hardware-Backed Encrypted Storage, Neomorphic Phone/OTP Flow, Fastify Authoritative JWT Hook & Live Supabase Verification
+- **Request:**
+  "Production Auth Initialization Plan: Atarashi Logistics
+  1. Phase 1: Native Supabase Client & Encrypted Storage
+     - Install expo-secure-store in apps/customer and configure Supabase client with custom AsyncStorage adapter backed by hardware-backed Android Keystore.
+     - Wire auto-refresh tokens so sessions persist across app restarts without dropping to guest mode.
+  2. Phase 2: India-First Phone & OTP Auth Screen (Neomorphic UI)
+     - Build apps/customer/src/app/auth.tsx with:
+       - 10-digit Indian mobile number input (+91 prefix) with instant validation.
+       - 6-digit OTP verification card with countdown resend timer.
+       - Email + Password instant toggle for operations & test accounts.
+     - On successful verification, trigger the existing database trigger (on_auth_user_created) which populates public.profiles (id, email, phone) and assigns the 'customer' role in public.user_roles.
+  3. Phase 3: Fastify API Server-Authoritative JWT Hook
+     - In apps/api/src/app.ts, add a Fastify onRequest auth preHandler that parses the Authorization: Bearer <token> header.
+     - Authenticate the token with Supabase Auth (supabase.auth.getUser(token)).
+     - Inject request.user = { id, role } into all mutating endpoints (/bookings, /wallet/topup, etc.), rejecting unauthenticated mutations with HTTP 401.
+  4. Phase 4: Live Verification on Device
+     - Execute real sign-up and sign-in transactions directly against live Supabase PostgreSQL.
+     - Verify JWT issuance, user profile creation in public.profiles, and wallet ledger record initialization."
+
+- **Goal:**
+  Implement and verify end-to-end production-grade authentication with zero mocks across Supabase PostgreSQL (`nbqliwsohowolmyooovs`), Fastify API, and the Expo Customer mobile app, with strict hardware-backed key storage and India-first phone/OTP UX.
+
+- **Changes & Deliverables Applied:**
+  1. **Phase 1: Native Supabase Client & Hardware-Backed Keystore Storage**:
+     - Installed `expo-secure-store` (~58.0.2) in `apps/customer` via `npx expo install expo-secure-store` (Expo SDK 58 compatible).
+     - Configured `SecureStoreAdapter` in [`apps/customer/src/lib/supabase.ts`](apps/customer/src/lib/supabase.ts) with `keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK` targeting Android Keystore AES-256 encryption.
+     - Added graceful web fallback to `window.localStorage`.
+     - Wired persistent auto-refresh tokens (`autoRefreshToken: true`, `persistSession: true`) with `AppState` listeners to start/stop auto-refreshing when the application foregrounds/backgrounds.
+
+  2. **Phase 2: India-First Phone & OTP Auth Screen (Strict Neomorphic Light Mode)**:
+     - Built [`apps/customer/src/app/auth.tsx`](apps/customer/src/app/auth.tsx):
+       - Palette & Geometry: Neomorphic Chalk Canvas (`#F4F7F4`), pure white elevated card (`#FFFFFF`), vibrant mint accent (`#6EE787`), charcoal text (`#111813`), capsule pills (`borderRadius: 9999`), zero glassmorphism.
+       - 10-Digit Indian Phone Input: Fixed `+91` prefix (🇮🇳 flag), real-time regex validation (`/^[6-9]\d{9}$/`), tactile input states.
+       - 6-Digit OTP Verification Card: 6 individual tactile digit boxes with active mint focus ring, integrated native text handler for seamless paste/typing, and 30-second countdown resend timer.
+       - Operations & Test Account Mode: Email + Password instant toggle supporting both Sign In and Sign Up with Full Name capture.
+     - Updated [`apps/customer/src/app/index.tsx`](apps/customer/src/app/index.tsx):
+       - Integrated Supabase `session` state with live `onAuthStateChange` subscription.
+       - Added dynamic profile chip in top header displaying active phone/email or "Sign In" pill linking to `/auth`.
+     - Database Migration [`supabase/migrations/20261107000000_auth_user_roles_trigger.sql`](supabase/migrations/20261107000000_auth_user_roles_trigger.sql):
+       - Updated `app_private.handle_new_user()` trigger function on `auth.users`.
+       - Automatically populates `public.profiles` (`id, full_name, email, phone, account_status`) AND assigns `'customer'` role in `public.user_roles` on conflict do nothing.
+       - Applied directly to live Supabase project `nbqliwsohowolmyooovs`.
+
+  3. **Phase 3: Fastify Server-Authoritative Auth Hook**:
+     - Updated [`apps/api/src/app.ts`](apps/api/src/app.ts):
+       - Initialized Supabase client with production `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
+       - Added Fastify `onRequest` server-authoritative auth preHandler hook parsing `Authorization: Bearer <token>`.
+       - Authenticates Bearer JWT via `supabaseClient.auth.getUser(token)`, retrieves assigned role from `public.user_roles`, and attaches `request.user = { id, role, email, phone }`.
+       - Enforces strict HTTP 401 Unauthorized rejection on unauthenticated mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`) across `/v1/bookings`, `/v1/wallet/*`, and `/v1/driver/*`.
+       - Preserves public calculation access to `/v1/pricing/quote`.
+     - Added `WalletLedgerEntry` and authenticated `POST /v1/wallet/topup` in [`apps/api/src/store/memory-store.ts`](apps/api/src/store/memory-store.ts) and [`apps/api/src/routes/wallet.ts`](apps/api/src/routes/wallet.ts).
+     - Updated [`apps/api/test/gateway.test.ts`](apps/api/test/gateway.test.ts) to verify 401 rejections, customer JWT authorization, driver token authorization, and wallet topup.
+
+  4. **Phase 4: Live Verification Against Production Supabase PostgreSQL**:
+     - Real Customer Creation: Signed up `customer_1794061061868@atarashi.in` (UUID `2159cf4d-ccab-4180-8db2-1a070b9a37c0`) directly against live Supabase.
+     - Profile Verification: Trigger automatically populated `public.profiles` with `full_name: 'Atarashi Verified Customer'`, `account_status: 'active'`.
+     - Role Verification: Trigger automatically assigned `role: 'customer'` in `public.user_roles`.
+     - JWT Issuance: Live ES256 Supabase token (1047 bytes) issued and verified.
+     - Fastify Server-Authoritative Verification: Fastify `onRequest` hook verified the live JWT and authorized mutating order creation with HTTP 201 (`order_cc0f73a6b3ff60d5`).
+     - Wallet Ledger Record: Initialized and queried credit transaction in `public.wallet_ledger` (`amount_paise: 50000`, `entry_type: 'credit'`).
+
+- **Verification Matrix**:
+  - `npm run typecheck`: **0 errors** across all 4 workspaces (`@atarashi/admin`, `@atarashi/api`, `@atarashi/customer`, `@atarashi/driver`).
+  - `npm test`: **32 / 32 tests passed** (22 API integration tests + 10 domain schema tests).

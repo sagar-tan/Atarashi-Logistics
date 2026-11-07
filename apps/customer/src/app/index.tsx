@@ -1,5 +1,7 @@
 import type { Coordinates, VehicleType } from '@atarashi/domain';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import {
   AlertCircle,
   ArrowDown,
@@ -284,6 +286,23 @@ export default function CustomerHomeScreen() {
   ]);
   const [tipPaise, setTipPaise] = useState<number>(2000); // ₹20 = 2000 paise
 
+  // Supabase Auth Session
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   // Pulse Animation for Finding Driver
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const radarAnim = useRef(new Animated.Value(0)).current;
@@ -489,6 +508,41 @@ export default function CustomerHomeScreen() {
         </TouchableOpacity>
       </View>
       <View style={styles.headerRightActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={session ? 'User profile' : 'Sign In'}
+          style={styles.authProfilePill}
+          onPress={() => {
+            if (session) {
+              const display = session.user.phone || session.user.email || 'Customer';
+              Alert.alert(
+                'Account',
+                `Signed in as: ${display}`,
+                [
+                  { text: 'Close', style: 'cancel' },
+                  {
+                    text: 'Sign Out',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await supabase.auth.signOut();
+                    },
+                  },
+                ]
+              );
+            } else {
+              router.push('/auth');
+            }
+          }}
+        >
+          <User size={15} color={colors.textPrimary} />
+          <Text style={styles.authProfileText}>
+            {session
+              ? (session.user.phone?.replace('+91', '') || session.user.email?.split('@')[0] || 'Account')
+              : 'Sign In'}
+          </Text>
+          {session && <View style={styles.authStatusDot} />}
+        </Pressable>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Notifications"
@@ -2411,6 +2465,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  authProfilePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 42,
+    paddingHorizontal: 12,
+    borderRadius: 21,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...theme.shadows.button,
+  },
+  authProfileText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  authStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
   },
   iconButton: {
     width: 42,
