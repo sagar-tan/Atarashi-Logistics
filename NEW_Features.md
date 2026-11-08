@@ -1213,3 +1213,21 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
        - Signed into real live production account (`customer_1794061061868@atarashi.in`) -> Session encrypted into hardware-backed Android KeyStore via `expo-secure-store`.
        - Navigated back to home screen -> Header pill dynamically updated from "Sign In" to active user account handle (`customer_1794061061868`).
        - Force stopped and killed app process (`am force-stop com.atarashi.customer`), re-launched app -> Hydrated active session from `SecureStore` without dropping to guest mode (`text="customer_1794061061868"` persisted).
+
+
+---
+
+## 2026-11-08 17:39 IST
+
+### User-Authorized Deployment to Physical Phone via USB Debugging
+- **Request:** "install it in the phone for me to test."
+- **Goal:** Fulfill the user's explicit request to install the updated standalone production build (with hardware-backed Supabase auth, encrypted KeyStore persistence, and Neomorphic `/auth` screen) directly onto their physical Samsung Galaxy phone (`RZGL304MCMB`).
+- **Execution & Verification**:
+  - Target: Samsung Galaxy physical device (`RZGL304MCMB`, SM-S931B).
+  - Executed streamed install via `adb -s RZGL304MCMB install -r apps/customer/android/app/build/outputs/apk/release/app-release.apk` -> `Success`.
+  - Verified package timestamp: `lastUpdateTime=2026-11-08 17:38:07`.
+  - Restarted application directly on device: `com.atarashi.customer/.MainActivity`.
+  - Dumped UI hierarchy from physical device:
+    - Verified top header renders the interactive Neomorphic `"Sign In"` button (`bounds="[681,155][907,265]"`).
+    - Verified Porter-grade service hierarchy (`2 Wheeler`, `Trucks & Freight`, `House Shifting`, quick destinations, and 4-tab bottom navigation).
+    - Ready for real-world user testing on physical hardware.
