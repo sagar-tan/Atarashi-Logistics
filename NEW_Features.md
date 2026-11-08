@@ -1231,3 +1231,69 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
     - Verified top header renders the interactive Neomorphic `"Sign In"` button (`bounds="[681,155][907,265]"`).
     - Verified Porter-grade service hierarchy (`2 Wheeler`, `Trucks & Freight`, `House Shifting`, quick destinations, and 4-tab bottom navigation).
     - Ready for real-world user testing on physical hardware.
+
+
+---
+
+## 2026-11-08 18:05 IST
+
+### Google Play Store Release Blueprint (Testing Phase to Production)
+- **Request:** "What are the necessities for this to be uploaded on Google play for testing phase, later for production. Like i want all the details and  soooo."
+- **Goal:** Provide a comprehensive architectural, technical, legal, and operational blueprint for publishing both `@atarashi/customer` and `@atarashi/driver` to the Google Play Store across Testing (Internal, Closed Alpha) and Production tracks.
+- **Execution & Deliverables:**
+  - Formulated the complete release specification covering:
+    1. **Account Architecture & Verification**: Personal account (20-tester / 14-day rule) vs Organization account (D-U-N-S number, zero hold requirement).
+    2. **Two-App Registration**: Independent store listings for `com.atarashi.customer` and `com.atarashi.driver`.
+    3. **Native Build Requirements**: Migration from debug keystore to production upload keystore, Android App Bundle (`.aab`) generation via `./gradlew bundleRelease`, `versionCode` invariants in `app.json`, and Target API 34/35 compliance.
+    4. **Permissions & High Rejection Risks**: Driver app background location disclosure dialog & video screencast requirements, foreground service location declaration, and Razorpay logistics physical goods billing exemption.
+    5. **Legal & Compliance Invariants**: Public HTTPS Privacy Policy URL, mandatory in-app and web-based Account Deletion URL, and Data Safety questionnaire mapping.
+    6. **Infrastructure Readiness**: Cloud backend hosting requirements (HTTPS API gateway, live Supabase endpoint cutover, Google Maps API key restriction by SHA-1 & package name).
+    7. **Store Creative Specifications & Multi-Track Release Roadmap**: Internal Testing (instant, 100 testers) -> Closed Testing (Alpha) -> Production staged rollout (10% -> 100%).
+  - Documented full operational runbook in artifact `google_play_release_blueprint.md`.
+
+
+---
+
+## 2026-11-08 18:07 IST
+
+### Mandatory Gated Authentication, Dynamic Server-Side Registration Check & Multi-Step Onboarding Flow
+- **Request:** 
+  - "why is the Fuckin Sign in option on the home screen, Sign in is not fuckin Optional mate, we want a proper, Login and then Onboarding Flow(getting necessary details of the User in a few steps)"
+  - "also put a serverside check if the user is new or already registered and based on which there would be less or more steps."
+- **Goal:**
+  - Make authentication strictly mandatory: completely eliminate optional "Sign In" buttons from the Home screen; unauthenticated users are gated immediately to `/auth`.
+  - Implement server-side check distinguishing brand new users (3 to 4 steps) from existing registered users (1 express step) or fully onboarded members (0 steps).
+  - Build Neomorphic multi-step onboarding screen ([`apps/customer/src/app/onboarding.tsx`](file:///c:/Users/tw_strat/Atarashi/Atarashi_Logistics/apps/customer/src/app/onboarding.tsx)) capturing essential customer delivery data (Profile Identity, Account Category: Personal vs Business, Operating Delivery Hub & Default Pickup Address, Vehicle Preferences, and ₹500 Delivery Welcome Bonus).
+  - Migrate live Supabase PostgreSQL schema (`nbqliwsohowolmyooovs`) to support onboarding columns and RLS update policies.
+- **Execution & Deliverables:**
+  1. **Database Migration (`supabase/migrations/20261108180000_customer_onboarding.sql`)**:
+     - Added `onboarding_completed`, `account_type` (`personal` | `business`), `company_name`, `gstin`, `city`, `default_address`, `default_pincode`, and `preferred_vehicle` columns to `public.profiles`.
+     - Executed via Supabase Management API directly against live project `nbqliwsohowolmyooovs` (HTTP 201).
+     - Granted authenticated update privileges for new profile columns under RLS.
+  2. **Shared Domain Schemas (`packages/domain`)**:
+     - Defined `accountTypeSchema`, `userOnboardingSchema`, and `onboardingStatusResponseSchema` with full Zod validation and TypeScript type exports (`AccountType`, `UserOnboardingInput`, `OnboardingStatusResponse`).
+  3. **Server-Side API Endpoints (`apps/api`)**:
+     - `POST /v1/auth/check-phone`: Public endpoint for instant phone registration lookup.
+     - `GET /v1/user/onboarding-status`: Authenticated endpoint querying `profiles` and `bookings` to dynamically return `is_new_user`, `onboarding_completed`, `step_count`, and `steps_required`.
+     - `POST /v1/user/onboarding-complete`: Server-authoritative endpoint updating `public.profiles` and atomically crediting ₹500 (50,000 paise) welcome bonus into `public.wallet_ledger`.
+     - Added comprehensive unit and integration suite in `apps/api/test/user.test.ts` (all 39 tests passing across monorepo).
+  4. **Customer App Auth Context & Routing Gate (`apps/customer`)**:
+     - Created `apps/customer/src/context/AuthContext.tsx` providing centralized auth state, hardware KeyStore session hydration, and live server onboarding status resolution.
+     - Updated `apps/customer/src/app/_layout.tsx` with `AuthRouteGate`:
+       - If unauthenticated: immediately redirects to `/auth` (no access to home screen).
+       - If authenticated but `!onboarding_completed`: immediately redirects to `/onboarding`.
+       - If authenticated and onboarded: routes directly to `/` (Home).
+     - Updated `apps/customer/src/app/auth.tsx`: removed guest back-to-home navigation; added real-time phone registration status badge; routed post-auth via server onboarding check.
+     - Built `apps/customer/src/app/onboarding.tsx`: Neomorphic multi-step onboarding supporting:
+       - Step 1: Personal Profile (Full Name, Invoice Email, Personal vs Business segmented cards).
+       - Step 2: Operating Delivery Hub (Bengaluru, Mumbai, Delhi-NCR, Hyderabad, Chennai, Pune) + Default Pickup Address & Pincode + Preferred Vehicle tier.
+       - Step 3 (Conditional): Business Name & GSTIN input.
+       - Step 4 / Celebration: ₹500 Delivery Welcome Bonus activation with instant entry into Home screen.
+     - Updated `apps/customer/src/app/index.tsx`: completely removed "Sign In" button; replaced with active verified profile chip displaying customer name and city; integrated Sign Out flow that destroys session and kicks back to `/auth`.
+  5. **Verification on Android Studio Emulator (`emulator-5554`)**:
+     - Verified clean app launch on `emulator-5554` gates directly to `/auth`.
+     - Signed in with customer account -> Verified automatic navigation to `/onboarding` (Step 1 of 3).
+     - Filled profile and default pickup address -> Saved to live Supabase PostgreSQL (`onboarding_completed: true`, `city: 'Bengaluru'`, `default_address: '100ft Road, Indiranagar'`).
+     - Verified home screen displays `"DELIVER IN: Bengaluru, India"` and verified user profile chip with zero "Sign In" button.
+     - Force-stopped app and restarted -> Persisted session and launched directly into Home screen.
+     - Tapped Sign Out -> Session destroyed and app immediately gated back to `/auth`.

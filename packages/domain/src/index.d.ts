@@ -67,3 +67,43 @@ export interface TransitionBookingInput {
   code?: string;
 }
 export declare const transitionBookingSchema: z.ZodType<TransitionBookingInput>;
+
+export type AccountType = 'personal' | 'business';
+export declare const accountTypeSchema: z.ZodType<AccountType>;
+
+export interface UserOnboardingInput {
+  full_name: string;
+  email?: string;
+  phone?: string;
+  account_type: AccountType;
+  company_name?: string;
+  gstin?: string;
+  city: string;
+  default_address: string;
+  default_pincode?: string;
+  preferred_vehicle?: VehicleType;
+}
+export declare const userOnboardingSchema: z.ZodType<UserOnboardingInput>;
+
+export interface OnboardingStatusResponse {
+  user_id: string;
+  is_new_user: boolean;
+  onboarding_completed: boolean;
+  step_count: number;
+  steps_required: string[];
+  profile: {
+    id: string;
+    full_name: string | null;
+    email?: string | null;
+    phone?: string | null;
+    account_type: AccountType;
+    company_name?: string | null;
+    gstin?: string | null;
+    city?: string | null;
+    default_address?: string | null;
+    default_pincode?: string | null;
+    preferred_vehicle?: VehicleType;
+  };
+}
+export declare const onboardingStatusResponseSchema: z.ZodType<OnboardingStatusResponse>;
+

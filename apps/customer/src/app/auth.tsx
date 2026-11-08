@@ -25,12 +25,16 @@ import {
   RotateCcw,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   User,
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { theme } from '@/theme/theme';
 
 export default function AuthScreen() {
+  const { refreshStatus } = useAuth();
+
   // Navigation / Tabs: 'phone' (India-first OTP) or 'email' (operations / test accounts)
   const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
 
@@ -40,6 +44,13 @@ export default function AuthScreen() {
   const [otpCode, setOtpCode] = useState('');
   const [countdown, setCountdown] = useState(30);
   const [canResend, setCanResend] = useState(false);
+
+  // Phone Registration Lookup State
+  const [phoneLookupResult, setPhoneLookupResult] = useState<{
+    checked: boolean;
+    registered: boolean;
+    name: string | null;
+  }>({ checked: false, registered: false, name: null });
 
   // Email Auth State
   const [emailMode, setEmailMode] = useState<'signin' | 'signup'>('signin');
@@ -56,6 +67,50 @@ export default function AuthScreen() {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const otpInputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+
+  // Indian Phone Validation: 10 digits starting with 6, 7, 8, or 9
+  const cleanPhone = phoneNumber.replace(/\D/g, '');
+  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
+
+  // Server-side check if phone is already registered
+  useEffect(() => {
+    if (isPhoneValid) {
+      const fullPhone = `+91${cleanPhone}`;
+      const apiBase = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://atarashi-logistics-api.onrender.com';
+      fetch(`${apiBase}/v1/auth/check-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setPhoneLookupResult({
+            checked: true,
+            registered: Boolean(data.registered),
+            name: data.name || null,
+          });
+        })
+        .catch(() => {
+          setPhoneLookupResult({ checked: false, registered: false, name: null });
+        });
+    } else {
+      setPhoneLookupResult({ checked: false, registered: false, name: null });
+    }
+  }, [cleanPhone, isPhoneValid]);
+
+  // Dynamic post-auth redirection based on server onboarding status
+  const navigateAfterAuth = async () => {
+    try {
+      const status = await refreshStatus();
+      if (status?.onboarding_completed) {
+        router.replace('/');
+      } else {
+        router.replace('/onboarding' as any);
+      }
+    } catch {
+      router.replace('/onboarding' as any);
+    }
+  };
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -82,10 +137,6 @@ export default function AuthScreen() {
     setErrorMessage(null);
     setSuccessMessage(null);
   };
-
-  // Indian Phone Validation: 10 digits starting with 6, 7, 8, or 9
-  const cleanPhone = phoneNumber.replace(/\D/g, '');
-  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
 
   const handleSendOtp = async () => {
     Keyboard.dismiss();
@@ -154,8 +205,8 @@ export default function AuthScreen() {
       if (data.session) {
         setSuccessMessage('Verification successful! Welcome to Atarashi.');
         setTimeout(() => {
-          router.replace('/');
-        }, 600);
+          navigateAfterAuth();
+        }, 500);
       } else {
         setErrorMessage('Verification completed, but session could not be established.');
       }
@@ -203,7 +254,7 @@ export default function AuthScreen() {
         if (data.session) {
           setSuccessMessage('Signed in successfully!');
           setTimeout(() => {
-            router.replace('/');
+            navigateAfterAuth();
           }, 500);
         }
       } else {
@@ -229,7 +280,7 @@ export default function AuthScreen() {
         if (data.session) {
           setSuccessMessage('Account created successfully!');
           setTimeout(() => {
-            router.replace('/');
+            navigateAfterAuth();
           }, 500);
         } else {
           setSuccessMessage('Account registered! Please check your email to confirm registration.');
@@ -255,15 +306,28 @@ export default function AuthScreen() {
       >
         {/* Top Header Bar */}
         <View style={styles.topBar}>
-          <Pressable
-            onPress={() => router.replace('/')}
-            style={styles.backButton}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Back to home"
-          >
-            <ChevronLeft size={22} color="#111813" />
-          </Pressable>
+          {phoneStep === 'otp' || authMethod === 'email' ? (
+            <Pressable
+              onPress={() => {
+                if (phoneStep === 'otp') {
+                  setPhoneStep('input');
+                  setOtpCode('');
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
+                } else {
+                  switchMethod('phone');
+                }
+              }}
+              style={styles.backButton}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <ChevronLeft size={22} color="#111813" />
+            </Pressable>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
 
           <View style={styles.brandRow}>
             <Image
@@ -389,6 +453,27 @@ export default function AuthScreen() {
                     </View>
                   )}
                 </View>
+
+                {/* Server Registration Status Indicator */}
+                {phoneLookupResult.checked && (
+                  <View style={styles.phoneStatusBadge}>
+                    {phoneLookupResult.registered ? (
+                      <>
+                        <View style={styles.greenStatusDot} />
+                        <Text style={styles.phoneStatusBadgeText}>
+                          Welcome back{phoneLookupResult.name ? `, ${phoneLookupResult.name}` : ''}! • Registered Member
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} color="#0F172A" />
+                        <Text style={styles.phoneStatusBadgeText}>
+                          New to Atarashi • Fast Onboarding & ₹500 Delivery Credit
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                )}
 
                 <Text style={styles.inputHelperText}>
                   Standard SMS rates or WhatsApp verification apply.
@@ -862,6 +947,30 @@ const styles = StyleSheet.create({
   },
   validCheck: {
     marginLeft: 6,
+  },
+  phoneStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginTop: 4,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  phoneStatusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F172A',
+    marginLeft: 6,
+  },
+  greenStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16A34A',
   },
   inputHelperText: {
     fontSize: 12,

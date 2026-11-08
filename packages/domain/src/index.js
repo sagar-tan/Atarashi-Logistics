@@ -53,3 +53,40 @@ export const transitionBookingSchema = z.object({
   status: z.enum(['picked_up', 'in_transit', 'completed', 'cancelled']),
   code: z.string().optional(),
 });
+
+export const accountTypeSchema = z.enum(['personal', 'business']);
+
+export const userOnboardingSchema = z.object({
+  full_name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  account_type: accountTypeSchema.default('personal'),
+  company_name: z.string().optional(),
+  gstin: z.string().optional(),
+  city: z.string().min(2, 'City is required'),
+  default_address: z.string().min(3, 'Address is required'),
+  default_pincode: z.string().regex(/^\d{6}$/, 'Enter a valid 6-digit Indian pincode').optional().or(z.literal('')),
+  preferred_vehicle: vehicleTypeSchema.default('bike'),
+});
+
+export const onboardingStatusResponseSchema = z.object({
+  user_id: z.string(),
+  is_new_user: z.boolean(),
+  onboarding_completed: z.boolean(),
+  step_count: z.number().int(),
+  steps_required: z.array(z.string()),
+  profile: z.object({
+    id: z.string(),
+    full_name: z.string().nullable(),
+    email: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    account_type: accountTypeSchema,
+    company_name: z.string().nullable().optional(),
+    gstin: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    default_address: z.string().nullable().optional(),
+    default_pincode: z.string().nullable().optional(),
+    preferred_vehicle: vehicleTypeSchema.optional(),
+  }),
+});
+

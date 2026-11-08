@@ -2,6 +2,7 @@ import type { Coordinates, VehicleType } from '@atarashi/domain';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
   AlertCircle,
   ArrowDown,
@@ -286,22 +287,8 @@ export default function CustomerHomeScreen() {
   ]);
   const [tipPaise, setTipPaise] = useState<number>(2000); // ₹20 = 2000 paise
 
-  // Supabase Auth Session
-  const [session, setSession] = useState<any>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  // Authenticated Context & Onboarding State
+  const { session, user, onboardingStatus, signOut } = useAuth();
 
   // Pulse Animation for Finding Driver
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -502,7 +489,9 @@ export default function CustomerHomeScreen() {
         >
           <Text style={styles.locationPretitle}>DELIVER IN</Text>
           <View style={styles.locationRow}>
-            <Text style={styles.locationCity}>Bengaluru, KA</Text>
+            <Text style={styles.locationCity}>
+              {onboardingStatus?.profile?.city ? `${onboardingStatus.profile.city}, India` : 'Bengaluru, KA'}
+            </Text>
             <ChevronDown size={14} color={colors.textPrimary} />
           </View>
         </TouchableOpacity>
@@ -510,37 +499,36 @@ export default function CustomerHomeScreen() {
       <View style={styles.headerRightActions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={session ? 'User profile' : 'Sign In'}
+          accessibilityLabel="User profile"
           style={styles.authProfilePill}
           onPress={() => {
-            if (session) {
-              const display = session.user.phone || session.user.email || 'Customer';
-              Alert.alert(
-                'Account',
-                `Signed in as: ${display}`,
-                [
-                  { text: 'Close', style: 'cancel' },
-                  {
-                    text: 'Sign Out',
-                    style: 'destructive',
-                    onPress: async () => {
-                      await supabase.auth.signOut();
-                    },
-                  },
-                ]
-              );
-            } else {
-              router.push('/auth');
-            }
+            const profile = onboardingStatus?.profile;
+            const displayName = profile?.full_name || user?.phone || user?.email || 'Customer';
+            const city = profile?.city || 'Bengaluru';
+            const accountType = (profile?.account_type || 'personal').toUpperCase();
+
+            Alert.alert(
+              'Verified Account',
+              `Customer: ${displayName}\nOperating Hub: ${city}\nCategory: ${accountType}\nWallet: ₹500 (Promo Credits)`,
+              [
+                { text: 'Close', style: 'cancel' },
+                {
+                  text: 'Sign Out',
+                  style: 'destructive',
+                  onPress: signOut,
+                },
+              ]
+            );
           }}
         >
           <User size={15} color={colors.textPrimary} />
           <Text style={styles.authProfileText}>
-            {session
-              ? (session.user.phone?.replace('+91', '') || session.user.email?.split('@')[0] || 'Account')
-              : 'Sign In'}
+            {onboardingStatus?.profile?.full_name?.split(' ')[0] ||
+              user?.phone?.replace('+91', '') ||
+              user?.email?.split('@')[0] ||
+              'Account'}
           </Text>
-          {session && <View style={styles.authStatusDot} />}
+          <View style={styles.authStatusDot} />
         </Pressable>
 
         <Pressable

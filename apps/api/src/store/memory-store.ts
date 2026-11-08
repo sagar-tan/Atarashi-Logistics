@@ -41,7 +41,26 @@ export interface WalletLedgerEntry {
   created_at: string;
 }
 
+export interface UserProfileRecord {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  account_type: 'personal' | 'business';
+  company_name: string | null;
+  gstin: string | null;
+  city: string | null;
+  default_address: string | null;
+  default_pincode: string | null;
+  preferred_vehicle: 'bike' | 'auto' | 'car' | 'pickup';
+  onboarding_completed: boolean;
+  account_status: 'active' | 'inactive' | 'banned';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TransitionResult {
+
   success: boolean;
   booking?: BookingRecord;
   error?: string;
@@ -53,6 +72,7 @@ export class MemoryStore {
   private driverStatuses: Map<string, DriverStatusRecord> = new Map();
   private walletOrders: Map<string, WalletOrderRecord> = new Map();
   private walletLedger: Map<string, WalletLedgerEntry> = new Map();
+  private profiles: Map<string, UserProfileRecord> = new Map();
 
   /**
    * Generates a 4-digit numeric code (e.g., '4821')
@@ -302,11 +322,50 @@ export class MemoryStore {
     return Array.from(this.walletLedger.values()).filter((e) => e.user_id === userId);
   }
 
+  public getProfile(userId: string): UserProfileRecord | undefined {
+    return this.profiles.get(userId);
+  }
+
+  public findProfileByPhone(phone: string): UserProfileRecord | undefined {
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    for (const p of this.profiles.values()) {
+      if (p.phone && p.phone.replace(/[^\d+]/g, '') === cleanPhone) {
+        return p;
+      }
+    }
+    return undefined;
+  }
+
+  public upsertProfile(userId: string, data: Partial<UserProfileRecord>): UserProfileRecord {
+    const existing = this.profiles.get(userId);
+    const now = new Date().toISOString();
+    const updated: UserProfileRecord = {
+      id: userId,
+      full_name: data.full_name !== undefined ? data.full_name : existing?.full_name ?? null,
+      email: data.email !== undefined ? data.email : existing?.email ?? null,
+      phone: data.phone !== undefined ? data.phone : existing?.phone ?? null,
+      account_type: data.account_type ?? existing?.account_type ?? 'personal',
+      company_name: data.company_name !== undefined ? data.company_name : existing?.company_name ?? null,
+      gstin: data.gstin !== undefined ? data.gstin : existing?.gstin ?? null,
+      city: data.city !== undefined ? data.city : existing?.city ?? null,
+      default_address: data.default_address !== undefined ? data.default_address : existing?.default_address ?? null,
+      default_pincode: data.default_pincode !== undefined ? data.default_pincode : existing?.default_pincode ?? null,
+      preferred_vehicle: data.preferred_vehicle ?? existing?.preferred_vehicle ?? 'bike',
+      onboarding_completed: data.onboarding_completed ?? existing?.onboarding_completed ?? false,
+      account_status: data.account_status ?? existing?.account_status ?? 'active',
+      created_at: existing?.created_at ?? now,
+      updated_at: now,
+    };
+    this.profiles.set(userId, updated);
+    return updated;
+  }
+
   public reset(): void {
     this.bookings.clear();
     this.driverStatuses.clear();
     this.walletOrders.clear();
     this.walletLedger.clear();
+    this.profiles.clear();
   }
 }
 

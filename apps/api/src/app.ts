@@ -5,6 +5,7 @@ import { pricingRoutes } from './routes/pricing.js';
 import { bookingRoutes } from './routes/bookings.js';
 import { driverRoutes } from './routes/driver.js';
 import { walletRoutes } from './routes/wallet.js';
+import { userRoutes } from './routes/user.js';
 import { MemoryStore, defaultStore } from './store/memory-store.js';
 
 export interface AuthUser {
@@ -110,9 +111,10 @@ export function buildApp(opts: AppOptions = {}) {
     if (isMutatingMethod) {
       const urlPath = request.url.split('?')[0];
       // /v1/pricing/quote is a public fare estimation calculation, not a mutation
-      const isPublicCalculation = urlPath === '/v1/pricing/quote';
+      // /v1/auth/check-phone is a public lookup
+      const isPublicEndpoint = urlPath === '/v1/pricing/quote' || urlPath === '/v1/auth/check-phone';
 
-      if (!isPublicCalculation && !request.user) {
+      if (!isPublicEndpoint && !request.user) {
         return reply.status(401).send({
           error: 'Unauthorized',
           message: 'Server-authoritative authentication required. Missing or invalid Bearer token.',
@@ -127,6 +129,7 @@ export function buildApp(opts: AppOptions = {}) {
   app.register(bookingRoutes);
   app.register(driverRoutes);
   app.register(walletRoutes);
+  app.register(userRoutes);
 
   return app;
 }
