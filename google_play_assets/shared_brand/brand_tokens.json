@@ -1,0 +1,37 @@
+{
+  "brandName": "Atarashi Logistics",
+  "tagline": "India's High-Velocity On-Demand Logistics Network",
+  "theme": "Neomorphic Light Mode",
+  "colors": {
+    "canvas": "#F4F7F4",
+    "cardSurface": "#FFFFFF",
+    "primaryAccent": "#6EE787",
+    "accentDark": "#5EDB79",
+    "textPrimary": "#111813",
+    "textMuted": "#64748B",
+    "borderHairline": "#E2E8F0",
+    "shadowDrop": "rgba(0, 0, 0, 0.06)"
+  },
+  "geometry": {
+    "capsuleRadius": 9999,
+    "cardRadius": 24,
+    "badgeRadius": 12
+  },
+  "specifications": {
+    "googlePlayIcon": {
+      "dimensions": "512x512",
+      "format": "PNG (32-bit with alpha)",
+      "maxSizeKb": 1024
+    },
+    "googlePlayFeatureGraphic": {
+      "dimensions": "1024x500",
+      "format": "PNG/JPEG (24-bit RGB, NO alpha)",
+      "maxSizeMb": 15
+    },
+    "googlePlayScreenshots": {
+      "resolution": "1080x2424",
+      "aspectRatio": "20.2:9 (Phone Portrait)",
+      "format": "PNG (24-bit RGB, NO alpha)"
+    }
+  }
+}

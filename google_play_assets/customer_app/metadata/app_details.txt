@@ -1,0 +1,60 @@
+# Atarashi Customer App - Google Play Store Listing Metadata
+Package Name: com.atarashi.customer
+
+--------------------------------------------------------------------------------
+1. APP TITLE (Maximum 30 characters)
+--------------------------------------------------------------------------------
+Atarashi: Instant Delivery
+
+--------------------------------------------------------------------------------
+2. SHORT DESCRIPTION (Maximum 80 characters)
+--------------------------------------------------------------------------------
+Fast, intra-city parcel & freight delivery with 2-wheelers, 3-wheelers & trucks.
+
+--------------------------------------------------------------------------------
+3. FULL DESCRIPTION (Maximum 4,000 characters)
+--------------------------------------------------------------------------------
+Atarashi is India's next-generation intra-city on-demand logistics and parcel delivery platform. Designed for modern individuals, small businesses, and enterprises, Atarashi delivers your packages across town quickly, safely, and transparently.
+
+Whether you need to send urgent documents across the city, transport retail goods, move household essentials, or dispatch commercial freight, Atarashi connects you with verified delivery partners in minutes.
+
+KEY FEATURES:
+
+🛵 Multi-Vehicle Fleet for Every Load
+• 2-Wheeler Courier: Fast, cost-effective delivery for parcels up to 20 kg (documents, parcels, clothes, groceries, electronics).
+• 3-Wheeler Auto / Cargo: Ideal for medium consignments up to 300 kg (boxes, home appliances, business inventories).
+• Trucks & Freight (Tata Ace, Pickup 8ft): Heavy commercial freight and furniture shifting up to 1,000 kg.
+• House & Office Shifting: Dedicated micro-relocation support with careful handling.
+
+⚡ Real-Time Transparent Pricing
+• No hidden fees or surprise surge charges.
+• Upfront distance-based fare calculation in paise with clear invoice breakdowns.
+• Multiple payment options: UPI, Wallets, Net Banking, Credit/Debit cards (via Razorpay), or Cash on Delivery.
+
+📍 Live GPS Courier Tracking
+• Real-time map tracking of your assigned delivery courier from pickup to drop-off.
+• Live ETA updates and instant courier contact via masked in-app calling.
+
+🔒 Safe & Verified Delivery
+• Secure 4-digit OTP verification at pickup and delivery to ensure zero package mix-ups.
+• Complete digital Proof of Delivery (POD) with photo confirmation and digital signature.
+• 100% verified, background-checked delivery partners.
+
+🏢 Atarashi for Business (B2B Logistics)
+• Automated GST-compliant invoicing with input tax credit support.
+• Multi-stop routing to deliver to multiple clients in a single trip.
+• Dedicated enterprise dashboard for high-volume order dispatch and tracking.
+
+🇮🇳 Fast, Secure Login
+• Frictionless 10-digit mobile number login with instant SMS OTP.
+• Secured with hardware-backed Android KeyStore AES-256 encrypted authentication.
+
+Download Atarashi today and experience effortless intra-city parcel delivery!
+
+--------------------------------------------------------------------------------
+4. CATEGORY & TAGS
+--------------------------------------------------------------------------------
+Category: Maps & Navigation / Business / Logistics
+Tags: Delivery, Courier, Logistics, Parcel, Freight, Truck Booking, Moving Services
+Target Age: 18 and older
+Content Rating: Everyone (PEGI 3 / IARC)

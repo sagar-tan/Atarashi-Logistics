@@ -1,0 +1,60 @@
+# Atarashi Driver App - Google Play Store Listing Metadata
+Package Name: com.atarashi.driver
+
+--------------------------------------------------------------------------------
+1. APP TITLE (Maximum 30 characters)
+--------------------------------------------------------------------------------
+Atarashi Driver Partner App
+
+--------------------------------------------------------------------------------
+2. SHORT DESCRIPTION (Maximum 80 characters)
+--------------------------------------------------------------------------------
+Drive, deliver parcels, and earn daily with instant payouts and low commissions.
+
+--------------------------------------------------------------------------------
+3. FULL DESCRIPTION (Maximum 4,000 characters)
+--------------------------------------------------------------------------------
+Partner with Atarashi and earn top income delivering parcels, goods, and freight in your city!
+
+Whether you own a Bike, an Auto/3-Wheeler, a Tata Ace, or a 4-Wheeler Pickup Truck, the Atarashi Driver app gives you flexible earning opportunities with complete freedom, transparent payouts, and steady daily delivery requests.
+
+WHY DRIVE WITH ATARASHI?
+
+💰 Instant Daily Payouts & Highest Earnings
+• Get paid directly into your linked bank account via UPI with minimal withdrawal wait times.
+• Highly competitive per-kilometer and minimum base rates calculated down to the paise.
+• Zero arbitrary deductions. Transparent trip fare calculation before you accept any delivery.
+
+⚡ Flexible Working Hours
+• Be your own boss: Work part-time or full-time on your schedule.
+• Simple One-Tap Online/Offline toggle — switch on the app when you are ready to earn, and turn it off when you are done.
+
+📍 Smart Route Radar & Minimum Dry Runs
+• Advanced proximity dispatch algorithm assigns orders closest to your current location.
+• Built-in turn-by-turn map navigation with optimized polyline routes to save fuel and time.
+• Multi-stop support so you can pick up multiple consignments in the same geographic cluster.
+
+🛵 All Vehicle Categories Supported
+• 2-Wheeler (Bike / Scooter): Fast intra-city courier, food, documents, and lightweight parcel deliveries.
+• 3-Wheeler Cargo / Auto: Commercial boxes, wholesale consignments, and consumer electronics.
+• Trucks & Mini-Trucks (Tata Ace, Bolero Pickup, 8ft): Furniture, industrial freight, and shifting services.
+
+🔒 Simple & Safe Delivery Process
+• In-app caller mask ensures your personal contact number remains private.
+• Digital Proof of Delivery (POD) via photo capture and secure OTP confirmation.
+• Dedicated 24/7 driver partner support team to assist you during active deliveries.
+
+EASY 3-STEP ONBOARDING:
+1. Download the Atarashi Driver app and register with your mobile number.
+2. Upload basic documents (Driving License, Vehicle RC, Aadhaar/PAN, Bank/UPI details).
+3. Complete quick profile verification and start accepting orders to earn immediately!
+
+Join the Atarashi Logistics driver network today and drive your earnings higher!
+
+--------------------------------------------------------------------------------
+4. CATEGORY & TAGS
+--------------------------------------------------------------------------------
+Category: Maps & Navigation / Business / Auto & Vehicles
+Tags: Driver, Delivery Partner, Courier Partner, Driver Job, Earn Money, Bike Delivery, Truck Driver
+Target Age: 18 and older
+Content Rating: Everyone (PEGI 3 / IARC)

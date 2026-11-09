@@ -1,0 +1,15 @@
+# Atarashi Driver App - Mandatory Web Endpoints for Google Play Console
+
+1. Privacy Policy URL:
+https://atarashi.in/driver-privacy
+(Must specifically detail background GPS tracking, device identifiers, and location sharing with customers).
+
+2. Account Deletion URL (Mandatory):
+https://atarashi.in/driver-account-deletion
+(Web form allowing drivers to request account deregistration, profile deletion, and data removal).
+
+3. Support Email:
+driver-support@atarashi.in
+
+4. Developer Website:
+https://atarashi.in

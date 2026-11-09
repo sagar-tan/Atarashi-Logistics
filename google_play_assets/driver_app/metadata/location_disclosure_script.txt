@@ -1,0 +1,41 @@
+# Google Play Location Permission Declaration & Demo Video Guide
+App: Atarashi Driver Partner App (com.atarashi.driver)
+
+--------------------------------------------------------------------------------
+1. BACKGROUND LOCATION POLICY & DECLARATION
+--------------------------------------------------------------------------------
+Google Play strictly requires all apps using ACCESS_BACKGROUND_LOCATION to submit:
+1. Written business justification in the Play Console App Content questionnaire.
+2. A publicly accessible YouTube video demonstrating the feature in action.
+
+Failure to follow these steps precisely is the #1 cause of rejection for driver apps.
+
+--------------------------------------------------------------------------------
+2. PLAY CONSOLE QUESTIONNAIRE ANSWERS
+--------------------------------------------------------------------------------
+Q: Why does your app need access to location in the background?
+Answer:
+"Atarashi Driver connects on-demand delivery couriers and truck drivers with nearby parcel pickup orders. The app requires background location access for two core features:
+1. Dispatch Proximity Matching: Drivers keep their phones in pockets or mounts while waiting for nearby parcel dispatch requests. The app periodically pings background location so the dispatch engine can match the closest driver.
+2. Continuous In-Transit Live Tracking: Once a driver accepts an order and navigates to the customer using an external turn-by-turn navigation app (like Google Maps), the Atarashi Driver app runs in the background. It sends live GPS coordinates to the customer and dispatch center so the customer can track their high-value parcel delivery until completion."
+
+Q: Does your app feature a prominent in-app disclosure?
+Answer:
+"Yes. Before requesting the Android system ACCESS_BACKGROUND_LOCATION permission, Atarashi Driver displays a clear, prominent, non-dismissible modal stating:
+'Atarashi Driver collects location data to enable nearby dispatch requests and live order tracking for customers even when the app is closed or not in use.'"
+
+--------------------------------------------------------------------------------
+3. DEMO VIDEO RECORDING SCRIPT (1-2 minutes)
+--------------------------------------------------------------------------------
+Record your Android screen (or emulator screen) showing:
+1. App launch on clean install.
+2. Prominent in-app disclosure dialog appearing on the screen with explicit wording:
+   "Atarashi Driver collects location data... even when the app is closed or not in use."
+3. User tapping "Allow" or "Continue", followed by the native Android runtime permission dialog ("Allow all the time").
+4. Driver toggling the switch to "ONLINE" on the home cockpit.
+5. Minimizing the Atarashi Driver app (pressing Home button) to send it to the background.
+6. Showing the persistent Foreground Service notification in the Android notification shade ("Atarashi Driver: Online - Searching for deliveries").
+7. Showing an incoming delivery notification received while the app is in the background.
+8. Re-opening the app and showing live GPS route navigation.
+
+Upload this recording to YouTube as "Unlisted" or "Public" and paste the link into Google Play Console > App Content > Location Permissions.

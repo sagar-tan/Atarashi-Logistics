@@ -1297,3 +1297,49 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
      - Verified home screen displays `"DELIVER IN: Bengaluru, India"` and verified user profile chip with zero "Sign In" button.
      - Force-stopped app and restarted -> Persisted session and launched directly into Home screen.
      - Tapped Sign Out -> Session destroyed and app immediately gated back to `/auth`.
+
+
+---
+
+## 2026-11-08 22:48 IST
+
+### Google Play Store Upload Assets & Media Package
+- **Request:** "put its logo and all in a proper Folder for upload, also the screenshots to include in the media section."
+- **Goal:** Organize all brand icons, logos, feature graphics, phone screenshots, and listing metadata into a dedicated, production-ready directory structure matching Google Play Console specifications for both Customer and Driver apps.
+- **Execution & Deliverables:**
+  - **Directory Created**: `google_play_assets/` with dedicated subdirectories for `customer_app/`, `driver_app/`, and `shared_brand/`.
+  - **Customer App (`com.atarashi.customer`) Assets**:
+    - **Icon**: `google_play_assets/customer_app/icon/icon_512x512.png` (512x512 px, 32-bit PNG with alpha).
+    - **Feature Graphic**: `google_play_assets/customer_app/feature_graphic/feature_graphic_1024x500.png` (1024x500 px, 24-bit RGB PNG, no alpha).
+    - **Screenshots (1080x2424 px, 24-bit RGB PNG)**:
+      1. `01_fleet_vehicle_selection.png`: 2-Wheeler, 3-Wheeler, Trucks & Freight fleet selection.
+      2. `02_instant_pricing_and_booking.png`: Real-time distance-based pricing in integer paise.
+      3. `03_phone_otp_authentication.png`: India-first +91 mobile & OTP card with KeyStore security.
+      4. `04_enterprise_operations_login.png`: Operations & enterprise email sign-in mode.
+    - **Store Metadata**: `google_play_assets/customer_app/metadata/app_details.txt` (Title 27/30 chars, Short desc 80/80 chars, Full desc) and `store_urls.txt` (Privacy Policy & Account Deletion endpoints).
+  - **Driver App (`com.atarashi.driver`) Assets**:
+    - **Icon**: `google_play_assets/driver_app/icon/icon_512x512.png` (512x512 px, 32-bit PNG with alpha).
+    - **Feature Graphic**: `google_play_assets/driver_app/feature_graphic/feature_graphic_1024x500.png` (1024x500 px, 24-bit RGB PNG, no alpha).
+    - **Screenshots (1080x2424 px, 24-bit RGB PNG)**:
+      1. `01_driver_cockpit_and_earnings.png`: Offline cockpit, shift stats, and daily earnings.
+      2. `02_online_dispatch_radar.png`: Live radar searching for nearby high-velocity courier requests.
+      3. `03_instant_delivery_order_offer.png`: Real-time order dispatch card with pickup/dropoff addresses and payout.
+      4. `04_live_courier_route_navigation.png`: In-transit route polyline and turn-by-turn navigation map.
+      5. `05_active_trip_lifecycle.png`: Active delivery state machine from pickup OTP to trip completion.
+    - **Store Metadata**: `google_play_assets/driver_app/metadata/app_details.txt` and `location_disclosure_script.txt` (Mandatory Google Play background location declaration and video demonstration guide).
+  - **Shared Brand Assets**: `google_play_assets/shared_brand/` containing master 512px icon, horizontal logo, hexagonal emblem, and `brand_tokens.json`.
+  - **Master Guide**: `google_play_assets/README.md` documenting field-by-field console upload steps.
+
+
+---
+
+## 2026-11-09 20:12 IST
+
+### Physical Phone Deployment & USB Handshake Diagnostic
+- **Request:** "go ahead"
+- **Goal:** Install and deploy the updated production release build (with mandatory auth gate, dynamic server-side registration check, and multi-step onboarding flow) directly onto the user's physical Samsung Galaxy phone (`RZGL304MCMB`) via USB debugging.
+- **Diagnostic & Execution:**
+  - Validated hardware connection in Windows PnP Manager: Device `USB\VID_04E8&PID_6860\RZGL304MCMB` is physically attached and recognized as `SAMSUNG Android ADB Interface`.
+  - ADB low-level USB scan reported WinUSB Error 31 (`cannot get serial number: A device attached to the system is not functioning (31)`).
+  - Identified requirement for physical phone authorization: Samsung Knox / One UI requires unlocking the phone screen (PIN/fingerprint) and accepting the "Allow USB debugging from this computer?" prompt before ADB can stream the APK install.
+  - Release APK ready at: [`apps/customer/android/app/build/outputs/apk/release/app-release.apk`](file:///c:/Users/tw_strat/Atarashi/Atarashi_Logistics/apps/customer/android/app/build/outputs/apk/release/app-release.apk).

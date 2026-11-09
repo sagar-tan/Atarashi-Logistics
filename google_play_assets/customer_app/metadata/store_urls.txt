@@ -1,0 +1,21 @@
+# Atarashi Customer App - Mandatory Web Endpoints for Google Play Console
+
+1. Privacy Policy URL:
+https://atarashi.in/privacy
+(Must be publicly accessible via HTTPS and detail location, phone number, and payment processing).
+
+2. Account Deletion URL (Mandatory per Google Play Policy):
+https://atarashi.in/account-deletion
+(Web form allowing users to submit their phone/email to delete account & order data without reinstalling the app).
+
+3. Support Email (Publicly visible on Store Listing):
+support@atarashi.in
+
+4. Developer Website:
+https://atarashi.in
+
+5. Data Safety Form Answers:
+- Location (Approximate & Precise): Collected for pickup/drop-off geocoding and live delivery tracking.
+- Personal Info (Name, Phone number, Email): Collected for account management and OTP authentication.
+- Financial Info (Payment history): Collected for digital receipts and billing records.
+- Security Practices: Data encrypted in transit (HTTPS / TLS 1.3). User can request data deletion.
