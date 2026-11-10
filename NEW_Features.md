@@ -1343,3 +1343,21 @@ Change log for Atarashi Logistics. Every step gets an entry: timestamp (IST), re
   - ADB low-level USB scan reported WinUSB Error 31 (`cannot get serial number: A device attached to the system is not functioning (31)`).
   - Identified requirement for physical phone authorization: Samsung Knox / One UI requires unlocking the phone screen (PIN/fingerprint) and accepting the "Allow USB debugging from this computer?" prompt before ADB can stream the APK install.
   - Release APK ready at: [`apps/customer/android/app/build/outputs/apk/release/app-release.apk`](file:///c:/Users/tw_strat/Atarashi/Atarashi_Logistics/apps/customer/android/app/build/outputs/apk/release/app-release.apk).
+
+
+---
+
+## 2026-11-10 16:01 IST
+
+### Production Build Deployment on Physical Device (`RZGL304MCMB`)
+- **Request:** "now try USD" (USB installation requested).
+- **Goal:** Install and verify the production release build (with mandatory auth gate, dynamic server-side registration check, and multi-step onboarding flow) onto the user's physical Samsung Galaxy phone (`RZGL304MCMB`).
+- **Execution & Verification:**
+  - Connected device: `RZGL304MCMB` (Samsung Galaxy).
+  - Executed streamed install via `adb -s RZGL304MCMB install -r apps/customer/android/app/build/outputs/apk/release/app-release.apk` -> `Success`.
+  - Launched application: `com.atarashi.customer/.MainActivity`.
+  - Dumped UI hierarchy from physical device:
+    - Verified that unauthenticated app start strictly gates directly to the `/auth` Login Screen (`Welcome to Atarashi`, `Mobile & OTP`, `Operations / Email`, `+91` input, `Get OTP`).
+    - Verified that guest access to the home screen is blocked.
+    - Verified hardware-backed Android KeyStore encryption notice rendered.
+    - Ready for real-world user testing on physical hardware.
